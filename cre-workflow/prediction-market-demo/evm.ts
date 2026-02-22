@@ -111,10 +111,11 @@ const mapOutcomeToUint = (r: LLMResult["result"]): 1 | 2 | 3 => {
  * @param responseId - Gemini response ID for audit trail
  * @returns ABI-encoded bytes for the report
  */
-const makeReportData = (marketId: bigint, outcomeUint: 1 | 2 | 3, confidenceBp: number, responseId: string) =>
-  encodeAbiParameters(parseAbiParameters("uint256 marketId, uint8 outcome, uint16 confidenceBp, string responseId"), [
-    marketId,
-    outcomeUint,
-    confidenceBp,
-    responseId,
-  ]);
+const makeReportData = (marketId: bigint, outcomeUint: 1 | 2 | 3, confidenceBp: number, responseId: string) => {
+  const encoded = encodeAbiParameters(
+    parseAbiParameters("uint256 marketId, uint8 outcome, uint16 confidenceBp, string responseId"),
+    [marketId, outcomeUint, confidenceBp, responseId]
+  );
+  // Prepend 0x01 prefix so _processReport routes to settleMarket()
+  return ("0x01" + encoded.slice(2)) as `0x${string}`;
+};

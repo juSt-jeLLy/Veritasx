@@ -18,7 +18,7 @@
 local-simulation:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
-      url: https://0xrpc.io/sep
+      url: https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg
 
 # ==========================================================================
 staging:
@@ -28,6 +28,6 @@ staging:
     workflow-owner-address: "(optional) Multi-signature contract address"
   rpcs:
     - chain-name: ethereum-testnet-sepolia
-      url: <select your own rpc url>
+      url: https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg
     - chain-name: ethereum-testnet-sepolia-base-1
       url: <select your own rpc url>
