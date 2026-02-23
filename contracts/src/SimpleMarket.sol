@@ -2,158 +2,283 @@
 pragma solidity 0.8.30;
 
 import { ReceiverTemplate } from "./interfaces/ReceiverTemplate.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract SimpleMarket is ReceiverTemplate {
-    using SafeERC20 for IERC20;
 
-    event SettlementRequested(uint256 indexed marketId, string question);
-    event SettlementResponse(uint256 indexed marketId, Status indexed status, Outcome indexed outcome);
+    // ═══════════════════════════════════════════════════════════════
+    // Events
+    // ═══════════════════════════════════════════════════════════════
+
+    event MarketCreated(
+        uint256 indexed marketId,
+        string question,
+        address escrowShieldedAddress,
+        address tokenAddress
+    );
     event MarketClosed(uint256 indexed marketId);
+    event SettlementRequested(uint256 indexed marketId, string question);
+    event SettlementResponse(
+        uint256 indexed marketId,
+        Status indexed status,
+        Outcome indexed outcome
+    );
+    event AggregateUpdated(
+        uint256 indexed marketId,
+        uint256 noTotal,
+        uint256 yesTotal,
+        uint256 noCount,
+        uint256 yesCount
+    );
+
+    // ═══════════════════════════════════════════════════════════════
+    // Types
+    // ═══════════════════════════════════════════════════════════════
 
     enum Outcome { None, No, Yes, Inconclusive }
     enum Status { Open, SettlementRequested, Settled, NeedsManual }
 
-    error StatusNotOpen(Status current);
-    error SettlementNotRequested(Status current);
-    error InvalidOutcome();
-    error ManualSettlementNotAllowed(Status current);
-    error MarketStillOpen();
-    error AlreadyPredicted();
-    error AmountZero();
-    error MarketIsClosed();
-    error NotSettledYet(Status current);
-    error AlreadyClaimed();
-    error IncorrectPrediction();
-    error NoWinners();
-
     struct Market {
         string question;
+        address escrowShieldedAddress; // bettors send private transfers here
+        address tokenAddress;          // ERC20 token for this market
         uint256 marketOpen;
+        uint256 closedAt;
         bool closed;
         Status status;
+        // Settlement fields
         Outcome outcome;
         uint256 settledAt;
-        string evidenceURI;
-        uint16 confidenceBps;
-        uint256[2] predCounts;
-        uint256[2] predTotals;
+        string evidenceURI;            // Gemini response ID for auditability
+        uint16 confidenceBps;          // Gemini confidence 0-10000
+        // Aggregates only — no individual bettor data
+        uint256[2] predTotals;         // [NO total wei, YES total wei]
+        uint256[2] predCounts;         // [NO count, YES count]
     }
 
-    struct Prediction {
-        uint256 amount;
-        Outcome pred;
-        bool claimed;
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // Errors
+    // ═══════════════════════════════════════════════════════════════
+
+    error StatusNotOpen(Status current);
+    error SettlementNotRequested(Status current);
+    error ManualSettlementNotAllowed(Status current);
+    error InvalidOutcome();
+    error MarketStillOpen();
+    error MarketIsClosed();
+    error MarketNotFound();
+
+    // ═══════════════════════════════════════════════════════════════
+    // State
+    // ═══════════════════════════════════════════════════════════════
 
     uint256 public nextMarketId;
-    mapping (uint256 => Market) public markets;
-    mapping (uint256 => mapping (address => Prediction)) predictions;
-    IERC20 public immutable paymentToken;
+    mapping(uint256 => Market) public markets;
 
-    constructor(address token, address forwarderAddress) ReceiverTemplate(forwarderAddress) {
-        paymentToken = IERC20(token);
+    // ═══════════════════════════════════════════════════════════════
+    // Constructor
+    // ═══════════════════════════════════════════════════════════════
+
+    constructor(address forwarderAddress) ReceiverTemplate(forwarderAddress) {}
+
+    // ═══════════════════════════════════════════════════════════════
+    // CRE Report Router — only CRE can call this via forwarder
+    // ═══════════════════════════════════════════════════════════════
+
+    function _processReport(bytes calldata report) internal override {
+        require(report.length > 0, "Empty report");
+        bytes1 prefix = report[0];
+
+        if (prefix == 0x00) {
+            // ── Create Market ──────────────────────────────────────
+            // Called by: createMarket CRE workflow (HTTP trigger)
+            // Stores: question, escrow shielded address, token
+            // Privacy: escrow shielded address hides escrow identity
+            (
+                string memory question,
+                address escrowShieldedAddress,
+                address tokenAddress
+            ) = abi.decode(report[1:], (string, address, address));
+
+            _newMarket(question, escrowShieldedAddress, tokenAddress);
+
+        } else if (prefix == 0x01) {
+            // ── Settle Market ──────────────────────────────────────
+            // Called by: settleAndPayout CRE workflow (EVM log trigger)
+            // Stores: outcome + final aggregate totals only
+            // Privacy: NO individual winner data, NO payout amounts
+            //          Gemini response ID stored for public auditability
+            (
+                uint256 marketId,
+                uint8 outcome,
+                uint16 confidenceBps,
+                string memory evidenceURI,
+                uint256 noTotal,
+                uint256 yesTotal,
+                uint256 noCount,
+                uint256 yesCount
+            ) = abi.decode(
+                report[1:],
+                (uint256, uint8, uint16, string, uint256, uint256, uint256, uint256)
+            );
+
+            _settleMarket(
+                marketId,
+                Outcome(outcome),
+                confidenceBps,
+                evidenceURI,
+                noTotal,
+                yesTotal,
+                noCount,
+                yesCount
+            );
+
+        } else if (prefix == 0x02) {
+            // ── Update Aggregate Totals ────────────────────────────
+            // Called by: placeBet CRE workflow (HTTP trigger)
+            // Stores: ONLY aggregate pool sizes — no bettor address,
+            //         no individual amount, no outcome choice
+            // Privacy: on-chain observer sees pool growing but cannot
+            //          link any address to any bet
+            (
+                uint256 marketId,
+                uint8 outcomeIndex, // 0 = NO, 1 = YES
+                uint256 amount
+            ) = abi.decode(report[1:], (uint256, uint8, uint256));
+
+            _updateAggregates(marketId, outcomeIndex, amount);
+        }
     }
 
-    function newMarket(string memory question) public returns (uint256) {
-        Market storage m = markets[nextMarketId++];
+    // ═══════════════════════════════════════════════════════════════
+    // Internal — CRE report handlers
+    // ═══════════════════════════════════════════════════════════════
+
+    function _newMarket(
+        string memory question,
+        address escrowShieldedAddress,
+        address tokenAddress
+    ) internal {
+        uint256 marketId = nextMarketId++;
+        Market storage m = markets[marketId];
         m.question = question;
+        m.escrowShieldedAddress = escrowShieldedAddress;
+        m.tokenAddress = tokenAddress;
         m.marketOpen = block.timestamp;
-        m.closed = false;
-        return nextMarketId - 1;
+        m.status = Status.Open;
+
+        emit MarketCreated(marketId, question, escrowShieldedAddress, tokenAddress);
     }
 
-    function closeMarket(uint256 marketId) public {
+    function _updateAggregates(
+        uint256 marketId,
+        uint8 outcomeIndex,
+        uint256 amount
+    ) internal {
         Market storage m = markets[marketId];
-        if (m.status != Status.Open) revert StatusNotOpen(m.status);
+        // Validate market is still open
         if (m.closed) revert MarketIsClosed();
-        m.closed = true;
-        emit MarketClosed(marketId);
-    }
-
-    function getMarket(uint256 marketId) public view returns (Market memory) {
-        return markets[marketId];
-    }
-
-    function requestSettlement(uint256 marketId) public {
-        Market storage m = markets[marketId];
-        if (!m.closed) revert MarketStillOpen();
         if (m.status != Status.Open) revert StatusNotOpen(m.status);
-        m.status = Status.SettlementRequested;
-        emit SettlementRequested(marketId, m.question);
+
+        m.predTotals[outcomeIndex] += amount;
+        m.predCounts[outcomeIndex]++;
+
+        emit AggregateUpdated(
+            marketId,
+            m.predTotals[0],
+            m.predTotals[1],
+            m.predCounts[0],
+            m.predCounts[1]
+        );
     }
 
-    function settleMarket(uint256 marketId, Outcome outcome, uint16 confidenceBps, string memory evidenceURI) private {
+    function _settleMarket(
+        uint256 marketId,
+        Outcome outcome,
+        uint16 confidenceBps,
+        string memory evidenceURI,
+        uint256 noTotal,
+        uint256 yesTotal,
+        uint256 noCount,
+        uint256 yesCount
+    ) internal {
         Market storage m = markets[marketId];
         if (m.status != Status.SettlementRequested) revert SettlementNotRequested(m.status);
+
         m.outcome = outcome;
         m.settledAt = block.timestamp;
         m.confidenceBps = confidenceBps;
         m.evidenceURI = evidenceURI;
-        if (outcome == Outcome.Inconclusive) {
-            m.status = Status.NeedsManual;
-        } else {
-            m.status = Status.Settled;
-        }
+        // Write final confirmed aggregates from Firestore
+        // (more accurate than incremental on-chain updates)
+        m.predTotals = [noTotal, yesTotal];
+        m.predCounts = [noCount, yesCount];
+        m.status = outcome == Outcome.Inconclusive
+            ? Status.NeedsManual
+            : Status.Settled;
+
         emit SettlementResponse(marketId, m.status, m.outcome);
     }
 
-    function settleMarketManually(uint256 marketId, Outcome outcome) public {
+    // ═══════════════════════════════════════════════════════════════
+    // Public — called by anyone (market lifecycle)
+    // ═══════════════════════════════════════════════════════════════
+
+    function closeMarket(uint256 marketId) external {
+        Market storage m = markets[marketId];
+        if (m.status != Status.Open) revert StatusNotOpen(m.status);
+        if (m.closed) revert MarketIsClosed();
+
+        m.closed = true;
+        m.closedAt = block.timestamp;
+
+        emit MarketClosed(marketId);
+    }
+
+    function requestSettlement(uint256 marketId) external {
+        Market storage m = markets[marketId];
+        if (!m.closed) revert MarketStillOpen();
+        if (m.status != Status.Open) revert StatusNotOpen(m.status);
+
+        m.status = Status.SettlementRequested;
+
+        emit SettlementRequested(marketId, m.question);
+    }
+
+    // Manual override for Inconclusive outcomes
+    function settleMarketManually(uint256 marketId, Outcome outcome) external {
         Market storage m = markets[marketId];
         if (outcome != Outcome.No && outcome != Outcome.Yes) revert InvalidOutcome();
         if (m.status != Status.NeedsManual) revert ManualSettlementNotAllowed(m.status);
+
         m.outcome = outcome;
         m.settledAt = block.timestamp;
         m.status = Status.Settled;
+
         emit SettlementResponse(marketId, m.status, m.outcome);
     }
 
-    function _processReport(bytes calldata report) internal override {
-        if (report.length > 0 && report[0] == 0x01) {
-            (uint256 marketId, uint8 outcome, uint16 confidenceBps, string memory responseId) =
-                abi.decode(report[1:], (uint256, uint8, uint16, string));
-            settleMarket(marketId, Outcome(outcome), confidenceBps, responseId);
-        } else {
-            string memory question = abi.decode(report, (string));
-            newMarket(question);
-        }
+    // ═══════════════════════════════════════════════════════════════
+    // View
+    // ═══════════════════════════════════════════════════════════════
+
+    function getMarket(uint256 marketId) external view returns (Market memory) {
+        return markets[marketId];
     }
 
-    function getUri(uint256 marketId) public view returns (string memory) {
-        return string.concat("http://localhost:3000/", markets[marketId].evidenceURI);
+    function getMarketCount() external view returns (uint256) {
+        return nextMarketId;
     }
 
-    function makePrediction(uint256 marketId, Outcome outcome, uint256 amount) public {
+    function getPoolSizes(uint256 marketId)
+        external
+        view
+        returns (uint256 noTotal, uint256 yesTotal, uint256 noCount, uint256 yesCount)
+    {
         Market storage m = markets[marketId];
-        if (m.closed) revert MarketIsClosed();
-        if (m.status != Status.Open) revert StatusNotOpen(m.status);
-        if (predictions[marketId][msg.sender].pred != Outcome.None) revert AlreadyPredicted();
-        if (outcome != Outcome.No && outcome != Outcome.Yes) revert InvalidOutcome();
-        if (amount == 0) revert AmountZero();
-        paymentToken.safeTransferFrom(msg.sender, address(this), amount);
-        predictions[marketId][msg.sender] = Prediction({ amount: amount, pred: outcome, claimed: false });
-        markets[marketId].predTotals[uint8(outcome) - 1] += amount;
-        markets[marketId].predCounts[uint8(outcome) - 1]++;
+        return (m.predTotals[0], m.predTotals[1], m.predCounts[0], m.predCounts[1]);
     }
 
-    function getPrediction(uint256 marketId) public view returns (Prediction memory) {
-        return predictions[marketId][msg.sender];
-    }
-
-    function claimPrediction(uint256 marketId) public {
-        Market storage m = markets[marketId];
-        Prediction storage p = predictions[marketId][msg.sender];
-        if (m.status != Status.Settled) revert NotSettledYet(m.status);
-        if (p.claimed) revert AlreadyClaimed();
-        if (m.outcome != p.pred) revert IncorrectPrediction();
-        uint8 outcomeIndex = uint8(m.outcome);
-        uint256 userStake = p.amount;
-        uint256 totalPool = m.predTotals[0] + m.predTotals[1];
-        uint256 winningTotal = m.predTotals[outcomeIndex - 1];
-        if (winningTotal == 0) revert NoWinners();
-        uint256 payoutAmount = (userStake * totalPool) / winningTotal;
-        p.claimed = true;
-        paymentToken.safeTransfer(msg.sender, payoutAmount);
+    function isSettled(uint256 marketId) external view returns (bool) {
+        return markets[marketId].status == Status.Settled;
     }
 }

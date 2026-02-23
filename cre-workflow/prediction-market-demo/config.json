@@ -1,8 +1,11 @@
 {
   "geminiModel": "gemini-2.5-flash",
+    "aceApiBaseUrl": "https://convergence2026-token-api.cldev.cloud",
+
   "evms": [
     {
-      "marketAddress": "0x068f894fC5feC44c8C12eE4bf62Af32E8Fc047D6",
+      "marketAddress": "0x77a8ae9Fd960a6edF8263eC0966071d86529f23c",
+      "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc",
       "chainSelectorName": "ethereum-testnet-sepolia",
       "gasLimit": "1000000"
     }
