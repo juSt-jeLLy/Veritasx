@@ -63,7 +63,7 @@ You’ll need these values for all API calls, and to configure your CRE `.env` v
 
 ## 5. Enable Firestore Security Rules
 
-To allow read/write access only to authenticated users, set your Firestore security rules:
+To allow read/write access only to authenticated users for both workflows, set your Firestore security rules.
 
 In the Firebase Console, go to:  
 **Firestore Database → Rules**
@@ -71,25 +71,28 @@ In the Firebase Console, go to:
 Replace existing rules with:
 
 ```
- rules_version = '2';
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // 🟢 This rule applies ONLY to documents inside the 'demo' collection
-    match /demo/{document} {
-      // Allow read access to EVERYONE (public access)
-      allow read: if true;
-
-      // Keep write access restricted to only signed-in users
-      allow write: if request.auth != null;
+    function isAuthed() {
+      return request.auth != null;
     }
 
-    // 🔒 All other collections are still restricted by default
+    // Settlement workflow documents
+    match /demo/{document} {
+      allow read, write: if isAuthed();
+    }
+
+    // Private bet workflow documents
+    match /privateBets/{document} {
+      allow read, write: if isAuthed();
+    }
   }
 }
-
 ```
+
+The same rules are included in the repo at `firestore.rules`.
 
 [Learn more about Firestore security rules →](https://firebase.google.com/docs/firestore/security/get-started#auth-required)
 

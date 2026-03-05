@@ -1,0 +1,11 @@
+{
+  "marketId": 0,
+  "outcome": "YES",
+  "amount": "1000000000000000000",
+  "account": "0x50035499ebF1cc5f49B57b6C2Ed7BdFdb791bB2a",
+  "recipient": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
+  "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc",
+  "flags": [],
+  "timestamp": 1772739140,
+  "auth": "0x1094eab9e58ea6817134ed7d8513deac46bbf757428212d43b26796615b7be6153815db733a9c12d2abcd5408113db7df91c4b9d8ac4811cb08470bd9b99ed9e1b"
+}

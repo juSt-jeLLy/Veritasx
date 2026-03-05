@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    // Settlement workflow documents.
+    match /demo/{document} {
+      allow read, write: if isAuthed();
+    }
+
+    // Private bet workflow documents.
+    match /privateBets/{document} {
+      allow read, write: if isAuthed();
+    }
+  }
+}
