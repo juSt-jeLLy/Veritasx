@@ -7,6 +7,7 @@ type Config = {
   geminiModel: string;
   evms: Array<{
     marketAddress: string;
+    tokenAddress?: string;
     chainSelectorName: string;
     gasLimit: string;
   }>;

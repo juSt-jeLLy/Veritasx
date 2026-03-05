@@ -10,24 +10,30 @@ import {
   TxStatus,
   decodeJson,
 } from "@chainlink/cre-sdk";
-import { encodeAbiParameters, parseAbiParameters } from "viem";
+import { encodeAbiParameters, isAddress, parseAbiParameters } from "viem";
 
 // Inline types
 interface CreateMarketPayload {
   question: string;
+  stakingAddress?: string;
+  stackingAddress?: string; // backwards-compatible typo alias
+  tokenAddress?: string;
 }
 
 type Config = {
     geminiModel: string;
     evms: Array<{
         marketAddress: string;
+        tokenAddress?: string;
         chainSelectorName: string;
         gasLimit: string;
     }>;
 };
 
 // ABI parameters for createMarket function
-const CREATE_MARKET_PARAMS = parseAbiParameters("string question");
+const CREATE_MARKET_PARAMS = parseAbiParameters(
+  "string question, address escrowShieldedAddress, address tokenAddress"
+);
 
 export function onHttpTrigger(runtime: Runtime<Config>, payload: HTTPPayload): string {
   runtime.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -50,11 +56,22 @@ export function onHttpTrigger(runtime: Runtime<Config>, payload: HTTPPayload): s
       runtime.log("[ERROR] Question is required");
       return "Error: Question is required";
     }
+    const stakingAddress = inputData.stakingAddress ?? inputData.stackingAddress;
+    if (!stakingAddress || !isAddress(stakingAddress)) {
+      runtime.log("[ERROR] stakingAddress must be a valid 0x-prefixed EVM address");
+      return "Error: stakingAddress is required and must be a valid address";
+    }
 
     // ─────────────────────────────────────────────────────────────
     // Step 2: Get network and create EVM client
     // ─────────────────────────────────────────────────────────────
     const evmConfig = runtime.config.evms[0];
+    const tokenAddress = inputData.tokenAddress ?? evmConfig.tokenAddress;
+
+    if (!tokenAddress || !isAddress(tokenAddress)) {
+      runtime.log("[ERROR] tokenAddress must be provided in payload or config and be a valid address");
+      return "Error: tokenAddress is required and must be a valid address";
+    }
 
     const network = getNetwork({
       chainFamily: "evm",
@@ -68,6 +85,8 @@ export function onHttpTrigger(runtime: Runtime<Config>, payload: HTTPPayload): s
 
     runtime.log(`[Step 2] Target chain: ${evmConfig.chainSelectorName}`);
     runtime.log(`[Step 2] Contract address: ${evmConfig.marketAddress}`);
+    runtime.log(`[Step 2] Staking address: ${stakingAddress}`);
+    runtime.log(`[Step 2] Token contract: ${tokenAddress}`);
 
     const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
 
@@ -76,7 +95,13 @@ export function onHttpTrigger(runtime: Runtime<Config>, payload: HTTPPayload): s
     // ─────────────────────────────────────────────────────────────
     runtime.log("[Step 3] Encoding market data...");
 
-    const reportData = encodeAbiParameters(CREATE_MARKET_PARAMS, [inputData.question]);
+    const encodedCreatePayload = encodeAbiParameters(CREATE_MARKET_PARAMS, [
+      inputData.question.trim(),
+      stakingAddress as `0x${string}`,
+      tokenAddress as `0x${string}`,
+    ]);
+    // Prefix 0x00 so SimpleMarket._processReport routes to create-market handling.
+    const reportData = (`0x00${encodedCreatePayload.slice(2)}`) as `0x${string}`;
 
     // ─────────────────────────────────────────────────────────────
     // Step 4: Generate a signed CRE report

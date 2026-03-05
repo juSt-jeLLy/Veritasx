@@ -15,6 +15,10 @@ import { z } from "zod";
 const evmConfigSchema = z.object({
   chainSelectorName: z.string().min(1),
   marketAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/u, "marketAddress must be a 0x-prefixed 20-byte hex"),
+  tokenAddress: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/u, "tokenAddress must be a 0x-prefixed 20-byte hex")
+    .optional(),
   // Gas limit must be a numeric string (parsed from JSON config)
   gasLimit: z
     .string()
