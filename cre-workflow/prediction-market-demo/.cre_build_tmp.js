@@ -6753,6 +6753,7 @@ var ListSchema = /* @__PURE__ */ messageDesc(file_values_v1_values, 3);
 var DecimalSchema = /* @__PURE__ */ messageDesc(file_values_v1_values, 4);
 var file_sdk_v1alpha_sdk = /* @__PURE__ */ fileDesc("ChVzZGsvdjFhbHBoYS9zZGsucHJvdG8SC3Nkay52MWFscGhhIrQBChVTaW1wbGVDb25zZW5zdXNJbnB1dHMSIQoFdmFsdWUYASABKAsyEC52YWx1ZXMudjEuVmFsdWVIABIPCgVlcnJvchgCIAEoCUgAEjUKC2Rlc2NyaXB0b3JzGAMgASgLMiAuc2RrLnYxYWxwaGEuQ29uc2Vuc3VzRGVzY3JpcHRvchIhCgdkZWZhdWx0GAQgASgLMhAudmFsdWVzLnYxLlZhbHVlQg0KC29ic2VydmF0aW9uIpABCglGaWVsZHNNYXASMgoGZmllbGRzGAEgAygLMiIuc2RrLnYxYWxwaGEuRmllbGRzTWFwLkZpZWxkc0VudHJ5Gk8KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRIvCgV2YWx1ZRgCIAEoCzIgLnNkay52MWFscGhhLkNvbnNlbnN1c0Rlc2NyaXB0b3I6AjgBIoYBChNDb25zZW5zdXNEZXNjcmlwdG9yEjMKC2FnZ3JlZ2F0aW9uGAEgASgOMhwuc2RrLnYxYWxwaGEuQWdncmVnYXRpb25UeXBlSAASLAoKZmllbGRzX21hcBgCIAEoCzIWLnNkay52MWFscGhhLkZpZWxkc01hcEgAQgwKCmRlc2NyaXB0b3IiagoNUmVwb3J0UmVxdWVzdBIXCg9lbmNvZGVkX3BheWxvYWQYASABKAwSFAoMZW5jb2Rlcl9uYW1lGAIgASgJEhQKDHNpZ25pbmdfYWxnbxgDIAEoCRIUCgxoYXNoaW5nX2FsZ28YBCABKAkilwEKDlJlcG9ydFJlc3BvbnNlEhUKDWNvbmZpZ19kaWdlc3QYASABKAwSEgoGc2VxX25yGAIgASgEQgIwABIWCg5yZXBvcnRfY29udGV4dBgDIAEoDBISCgpyYXdfcmVwb3J0GAQgASgMEi4KBHNpZ3MYBSADKAsyIC5zZGsudjFhbHBoYS5BdHRyaWJ1dGVkU2lnbmF0dXJlIjsKE0F0dHJpYnV0ZWRTaWduYXR1cmUSEQoJc2lnbmF0dXJlGAEgASgMEhEKCXNpZ25lcl9pZBgCIAEoDSJrChFDYXBhYmlsaXR5UmVxdWVzdBIKCgJpZBgBIAEoCRIlCgdwYXlsb2FkGAIgASgLMhQuZ29vZ2xlLnByb3RvYnVmLkFueRIOCgZtZXRob2QYAyABKAkSEwoLY2FsbGJhY2tfaWQYBCABKAUiWgoSQ2FwYWJpbGl0eVJlc3BvbnNlEicKB3BheWxvYWQYASABKAsyFC5nb29nbGUucHJvdG9idWYuQW55SAASDwoFZXJyb3IYAiABKAlIAEIKCghyZXNwb25zZSJYChNUcmlnZ2VyU3Vic2NyaXB0aW9uEgoKAmlkGAEgASgJEiUKB3BheWxvYWQYAiABKAsyFC5nb29nbGUucHJvdG9idWYuQW55Eg4KBm1ldGhvZBgDIAEoCSJVChpUcmlnZ2VyU3Vic2NyaXB0aW9uUmVxdWVzdBI3Cg1zdWJzY3JpcHRpb25zGAEgAygLMiAuc2RrLnYxYWxwaGEuVHJpZ2dlclN1YnNjcmlwdGlvbiJACgdUcmlnZ2VyEg4KAmlkGAEgASgEQgIwABIlCgdwYXlsb2FkGAIgASgLMhQuZ29vZ2xlLnByb3RvYnVmLkFueSInChhBd2FpdENhcGFiaWxpdGllc1JlcXVlc3QSCwoDaWRzGAEgAygFIrgBChlBd2FpdENhcGFiaWxpdGllc1Jlc3BvbnNlEkgKCXJlc3BvbnNlcxgBIAMoCzI1LnNkay52MWFscGhhLkF3YWl0Q2FwYWJpbGl0aWVzUmVzcG9uc2UuUmVzcG9uc2VzRW50cnkaUQoOUmVzcG9uc2VzRW50cnkSCwoDa2V5GAEgASgFEi4KBXZhbHVlGAIgASgLMh8uc2RrLnYxYWxwaGEuQ2FwYWJpbGl0eVJlc3BvbnNlOgI4ASKgAQoORXhlY3V0ZVJlcXVlc3QSDgoGY29uZmlnGAEgASgMEisKCXN1YnNjcmliZRgCIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eUgAEicKB3RyaWdnZXIYAyABKAsyFC5zZGsudjFhbHBoYS5UcmlnZ2VySAASHQoRbWF4X3Jlc3BvbnNlX3NpemUYBCABKARCAjAAQgkKB3JlcXVlc3QimQEKD0V4ZWN1dGlvblJlc3VsdBIhCgV2YWx1ZRgBIAEoCzIQLnZhbHVlcy52MS5WYWx1ZUgAEg8KBWVycm9yGAIgASgJSAASSAoVdHJpZ2dlcl9zdWJzY3JpcHRpb25zGAMgASgLMicuc2RrLnYxYWxwaGEuVHJpZ2dlclN1YnNjcmlwdGlvblJlcXVlc3RIAEIICgZyZXN1bHQiVgoRR2V0U2VjcmV0c1JlcXVlc3QSLAoIcmVxdWVzdHMYASADKAsyGi5zZGsudjFhbHBoYS5TZWNyZXRSZXF1ZXN0EhMKC2NhbGxiYWNrX2lkGAIgASgFIiIKE0F3YWl0U2VjcmV0c1JlcXVlc3QSCwoDaWRzGAEgAygFIqsBChRBd2FpdFNlY3JldHNSZXNwb25zZRJDCglyZXNwb25zZXMYASADKAsyMC5zZGsudjFhbHBoYS5Bd2FpdFNlY3JldHNSZXNwb25zZS5SZXNwb25zZXNFbnRyeRpOCg5SZXNwb25zZXNFbnRyeRILCgNrZXkYASABKAUSKwoFdmFsdWUYAiABKAsyHC5zZGsudjFhbHBoYS5TZWNyZXRSZXNwb25zZXM6AjgBIi4KDVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkSEQoJbmFtZXNwYWNlGAIgASgJIkUKBlNlY3JldBIKCgJpZBgBIAEoCRIRCgluYW1lc3BhY2UYAiABKAkSDQoFb3duZXIYAyABKAkSDQoFdmFsdWUYBCABKAkiSgoLU2VjcmV0RXJyb3ISCgoCaWQYASABKAkSEQoJbmFtZXNwYWNlGAIgASgJEg0KBW93bmVyGAMgASgJEg0KBWVycm9yGAQgASgJIm4KDlNlY3JldFJlc3BvbnNlEiUKBnNlY3JldBgBIAEoCzITLnNkay52MWFscGhhLlNlY3JldEgAEikKBWVycm9yGAIgASgLMhguc2RrLnYxYWxwaGEuU2VjcmV0RXJyb3JIAEIKCghyZXNwb25zZSJBCg9TZWNyZXRSZXNwb25zZXMSLgoJcmVzcG9uc2VzGAEgAygLMhsuc2RrLnYxYWxwaGEuU2VjcmV0UmVzcG9uc2UquAEKD0FnZ3JlZ2F0aW9uVHlwZRIgChxBR0dSRUdBVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASGwoXQUdHUkVHQVRJT05fVFlQRV9NRURJQU4QARIeChpBR0dSRUdBVElPTl9UWVBFX0lERU5USUNBTBACEiIKHkFHR1JFR0FUSU9OX1RZUEVfQ09NTU9OX1BSRUZJWBADEiIKHkFHR1JFR0FUSU9OX1RZUEVfQ09NTU9OX1NVRkZJWBAEKjkKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEgwKCE1PREVfRE9OEAESDQoJTU9ERV9OT0RFEAJCaAoPY29tLnNkay52MWFscGhhQghTZGtQcm90b1ABogIDU1hYqgILU2RrLlYxYWxwaGHKAgtTZGtcVjFhbHBoYeICF1Nka1xWMWFscGhhXEdQQk1ldGFkYXRh6gIMU2RrOjpWMWFscGhhYgZwcm90bzM", [file_google_protobuf_any, file_google_protobuf_empty, file_values_v1_values]);
 var SimpleConsensusInputsSchema = /* @__PURE__ */ messageDesc(file_sdk_v1alpha_sdk, 0);
+var ConsensusDescriptorSchema = /* @__PURE__ */ messageDesc(file_sdk_v1alpha_sdk, 2);
 var ReportRequestSchema = /* @__PURE__ */ messageDesc(file_sdk_v1alpha_sdk, 3);
 var ReportResponseSchema = /* @__PURE__ */ messageDesc(file_sdk_v1alpha_sdk, 4);
 var CapabilityRequestSchema = /* @__PURE__ */ messageDesc(file_sdk_v1alpha_sdk, 6);
@@ -7313,6 +7314,15 @@ var decodeJson = (input) => {
   const textBody = decoder.decode(input);
   return JSON.parse(textBody);
 };
+function ok(responseOrFn) {
+  if (typeof responseOrFn === "function") {
+    return {
+      result: () => ok(responseOrFn().result)
+    };
+  } else {
+    return responseOrFn.statusCode >= 200 && responseOrFn.statusCode < 300;
+  }
+}
 function sendReport(runtime, report, fn) {
   const rawReport = report.x_generatedCodeOnly_unwrap();
   const request = fn(rawReport);
@@ -10924,6 +10934,33 @@ var getNetwork = (options) => {
   }
   return;
 };
+function consensusIdenticalAggregation() {
+  return simpleConsensus(AggregationType.IDENTICAL);
+}
+
+class ConsensusImpl {
+  descriptor;
+  defaultValue;
+  constructor(descriptor, defaultValue) {
+    this.descriptor = descriptor;
+    this.defaultValue = defaultValue;
+  }
+  withDefault(t) {
+    return new ConsensusImpl(this.descriptor, t);
+  }
+  _usesUToForceShape(_) {}
+}
+function simpleConsensus(agg) {
+  return new ConsensusImpl(simpleDescriptor(agg));
+}
+function simpleDescriptor(agg) {
+  return create(ConsensusDescriptorSchema, {
+    descriptor: {
+      case: "aggregation",
+      value: agg
+    }
+  });
+}
 
 class Int64 {
   static INT64_MIN = -(2n ** 63n);
@@ -15693,88 +15730,275 @@ class Runner {
 init_exports();
 init_encodeAbiParameters();
 init_isAddress();
-var CREATE_MARKET_PARAMS = parseAbiParameters("string question, address escrowShieldedAddress, address tokenAddress");
-function onHttpTrigger(runtime2, payload) {
-  runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  runtime2.log("CRE Workflow: HTTP Trigger - Create Market");
-  runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  try {
-    if (!payload.input || payload.input.length === 0) {
-      runtime2.log("[ERROR] Empty request payload");
-      return "Error: Empty request";
-    }
-    const inputData = decodeJson(payload.input);
-    runtime2.log(`[Step 1] Received market question: "${inputData.question}"`);
-    if (!inputData.question || inputData.question.trim().length === 0) {
-      runtime2.log("[ERROR] Question is required");
-      return "Error: Question is required";
-    }
-    const stakingAddress = inputData.stakingAddress ?? inputData.stackingAddress;
-    if (!stakingAddress || !isAddress(stakingAddress)) {
-      runtime2.log("[ERROR] stakingAddress must be a valid 0x-prefixed EVM address");
-      return "Error: stakingAddress is required and must be a valid address";
-    }
-    const evmConfig = runtime2.config.evms[0];
-    const tokenAddress = inputData.tokenAddress ?? evmConfig.tokenAddress;
-    if (!tokenAddress || !isAddress(tokenAddress)) {
-      runtime2.log("[ERROR] tokenAddress must be provided in payload or config and be a valid address");
-      return "Error: tokenAddress is required and must be a valid address";
-    }
-    const network248 = getNetwork({
-      chainFamily: "evm",
-      chainSelectorName: evmConfig.chainSelectorName,
-      isTestnet: true
-    });
-    if (!network248) {
-      throw new Error(`Unknown chain: ${evmConfig.chainSelectorName}`);
-    }
-    runtime2.log(`[Step 2] Target chain: ${evmConfig.chainSelectorName}`);
-    runtime2.log(`[Step 2] Contract address: ${evmConfig.marketAddress}`);
-    runtime2.log(`[Step 2] Staking address: ${stakingAddress}`);
-    runtime2.log(`[Step 2] Token contract: ${tokenAddress}`);
-    const evmClient = new cre.capabilities.EVMClient(network248.chainSelector.selector);
-    runtime2.log("[Step 3] Encoding market data...");
-    const encodedCreatePayload = encodeAbiParameters(CREATE_MARKET_PARAMS, [
-      inputData.question.trim(),
-      stakingAddress,
-      tokenAddress
-    ]);
-    const reportData = `0x00${encodedCreatePayload.slice(2)}`;
-    runtime2.log("[Step 4] Generating CRE report...");
-    const reportResponse = runtime2.report({
-      encodedPayload: hexToBase64(reportData),
-      encoderName: "evm",
-      signingAlgo: "ecdsa",
-      hashingAlgo: "keccak256"
-    }).result();
-    runtime2.log(`[Step 5] Writing to contract: ${evmConfig.marketAddress}`);
-    const writeResult = evmClient.writeReport(runtime2, {
-      receiver: evmConfig.marketAddress,
-      report: reportResponse,
-      gasConfig: {
-        gasLimit: evmConfig.gasLimit
-      }
-    }).result();
-    if (writeResult.txStatus === TxStatus.SUCCESS) {
-      const txHash = bytesToHex(writeResult.txHash || new Uint8Array(32));
-      runtime2.log(`[Step 6] ✓ Transaction successful: ${txHash}`);
-      runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      return txHash;
-    }
-    throw new Error(`Transaction failed with status: ${writeResult.txStatus}`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    runtime2.log(`[ERROR] ${msg}`);
-    runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    throw err;
+var UPDATE_AGGREGATES_PARAMS = parseAbiParameters("uint256 marketId, uint8 outcomeIndex, uint256 amount");
+function writePrivateBetAggregate(runtime2, marketId, outcomeIndex, amount) {
+  const evmConfig = runtime2.config.evms[0];
+  const network248 = getNetwork({
+    chainFamily: "evm",
+    chainSelectorName: evmConfig.chainSelectorName,
+    isTestnet: true
+  });
+  if (!network248) {
+    throw new Error(`Unknown chain: ${evmConfig.chainSelectorName}`);
   }
+  const encodedPayload = encodeAbiParameters(UPDATE_AGGREGATES_PARAMS, [
+    marketId,
+    outcomeIndex,
+    amount
+  ]);
+  const reportData = `0x02${encodedPayload.slice(2)}`;
+  const reportResponse = runtime2.report({
+    encodedPayload: hexToBase64(reportData),
+    encoderName: "evm",
+    signingAlgo: "ecdsa",
+    hashingAlgo: "keccak256"
+  }).result();
+  const evmClient = new cre.capabilities.EVMClient(network248.chainSelector.selector);
+  const writeResult = evmClient.writeReport(runtime2, {
+    receiver: evmConfig.marketAddress,
+    report: reportResponse,
+    gasConfig: {
+      gasLimit: evmConfig.gasLimit
+    }
+  }).result();
+  if (writeResult.txStatus !== TxStatus.SUCCESS) {
+    throw new Error(`Aggregate update transaction failed with status: ${writeResult.txStatus}`);
+  }
+  return bytesToHex(writeResult.txHash || new Uint8Array(32));
 }
+function writePrivateBetToFirestore(runtime2, record) {
+  const firebaseApiKey = runtime2.getSecret({ id: "FIREBASE_API_KEY" }).result();
+  const firebaseProjectId = runtime2.getSecret({ id: "FIREBASE_PROJECT_ID" }).result();
+  const httpClient = new cre.capabilities.HTTPClient;
+  const authToken = httpClient.sendRequest(runtime2, postFirebaseAnonymousSignIn(firebaseApiKey.value), consensusIdenticalAggregation())(runtime2.config).result();
+  return httpClient.sendRequest(runtime2, postFirestorePrivateBetWrite(authToken.idToken, firebaseProjectId.value, record), consensusIdenticalAggregation())(runtime2.config).result();
+}
+var postFirebaseAnonymousSignIn = (firebaseApiKey) => (sendRequester) => {
+  const payload = {
+    returnSecureToken: true
+  };
+  const bodyBytes = new TextEncoder().encode(JSON.stringify(payload));
+  const body = Buffer.from(bodyBytes).toString("base64");
+  const req = {
+    url: `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`,
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    cacheSettings: {
+      readFromCache: true,
+      maxAgeMs: 60000
+    }
+  };
+  const resp = sendRequester.sendRequest(req).result();
+  const bodyText = new TextDecoder().decode(resp.body);
+  if (!ok(resp)) {
+    throw new Error(`Firebase sign-in failed with status ${resp.statusCode}: ${bodyText}`);
+  }
+  return JSON.parse(bodyText);
+};
+var postFirestorePrivateBetWrite = (idToken, projectId, record) => (sendRequester) => {
+  const documentId = makeSafeDocId(record.privateTransferId || `${record.marketId.toString()}-${Date.now()}`);
+  const payload = {
+    fields: {
+      marketId: { integerValue: record.marketId.toString() },
+      outcome: { stringValue: record.outcome },
+      outcomeIndex: { integerValue: record.outcomeIndex.toString() },
+      amount: { stringValue: record.amount },
+      bettorAddress: { stringValue: record.bettorAddress },
+      recipient: { stringValue: record.recipient },
+      tokenAddress: { stringValue: record.tokenAddress },
+      flags: { stringValue: JSON.stringify(record.flags) },
+      privateTransferId: { stringValue: record.privateTransferId },
+      privateTransferResponse: { stringValue: record.privateTransferResponse },
+      aggregateTxHash: { stringValue: record.aggregateTxHash },
+      contractAddress: { stringValue: record.contractAddress },
+      createdAt: { integerValue: Date.now() }
+    }
+  };
+  const bodyBytes = new TextEncoder().encode(JSON.stringify(payload));
+  const body = Buffer.from(bodyBytes).toString("base64");
+  const req = {
+    url: `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/privateBets?documentId=${documentId}`,
+    method: "POST",
+    body,
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    cacheSettings: {
+      readFromCache: false,
+      maxAgeMs: 0
+    }
+  };
+  const resp = sendRequester.sendRequest(req).result();
+  const bodyText = new TextDecoder().decode(resp.body);
+  if (!ok(resp)) {
+    throw new Error(`Firestore write failed with status ${resp.statusCode}: ${bodyText}`);
+  }
+  return JSON.parse(bodyText);
+};
+var makeSafeDocId = (value2) => {
+  if (!value2)
+    return `private-bet-${Date.now()}`;
+  return value2.replace(/[^a-zA-Z0-9._-]/gu, "_").slice(0, 120);
+};
+function executePrivateTransfer(runtime2, payload) {
+  const httpClient = new cre.capabilities.HTTPClient;
+  return httpClient.sendRequest(runtime2, postPrivateTransfer(payload), consensusIdenticalAggregation())(runtime2.config).result();
+}
+var postPrivateTransfer = (payload) => (sendRequester, config) => {
+  const normalizedBaseUrl = config.aceApiBaseUrl.replace(/\/+$/u, "");
+  const requestBody = {
+    account: payload.account,
+    recipient: payload.recipient,
+    token: payload.token,
+    amount: payload.amount,
+    flags: payload.flags,
+    timestamp: payload.timestamp,
+    auth: payload.auth
+  };
+  const bodyBytes = new TextEncoder().encode(JSON.stringify(requestBody));
+  const body = Buffer.from(bodyBytes).toString("base64");
+  const req = {
+    url: `${normalizedBaseUrl}/private-transfer`,
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    cacheSettings: {
+      readFromCache: false,
+      maxAgeMs: 0
+    }
+  };
+  const resp = sendRequester.sendRequest(req).result();
+  const bodyText = new TextDecoder().decode(resp.body);
+  if (!ok(resp)) {
+    throw new Error(`Private transfer API failed with status ${resp.statusCode}: ${bodyText}`);
+  }
+  return JSON.parse(bodyText);
+};
+function onPrivateBetHttpTrigger(runtime2, payload) {
+  runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  runtime2.log("CRE Workflow: HTTP Trigger - Private Bet");
+  runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  if (!payload.input || payload.input.length === 0) {
+    throw new Error("Empty request payload");
+  }
+  const inputData = decodeJson(payload.input);
+  const marketId = parseBigIntField(inputData.marketId, "marketId");
+  const amount = parseBigIntField(inputData.amount, "amount");
+  if (amount <= 0n) {
+    throw new Error("amount must be greater than 0");
+  }
+  const bettorAddress = inputData.account ?? inputData.bettorAddress;
+  if (!bettorAddress || !isAddress(bettorAddress)) {
+    throw new Error("account (or bettorAddress) must be a valid EVM address");
+  }
+  const recipient = inputData.recipient ?? inputData.escrowAddress;
+  if (!recipient || !isAddress(recipient)) {
+    throw new Error("recipient (or escrowAddress) must be a valid EVM address");
+  }
+  const tokenAddress = inputData.tokenAddress ?? runtime2.config.evms[0].tokenAddress;
+  if (!tokenAddress || !isAddress(tokenAddress)) {
+    throw new Error("tokenAddress must be provided in payload or config and be a valid EVM address");
+  }
+  const timestamp = parseTimestamp(inputData.timestamp);
+  const auth = requiredString(inputData.auth, "auth");
+  if (!auth.startsWith("0x")) {
+    throw new Error("auth must be a 0x-prefixed signature string");
+  }
+  const flags = normalizeFlags(inputData.flags);
+  const outcomeIndex = parseOutcomeIndex(inputData.outcomeIndex, inputData.outcome);
+  const outcomeLabel = outcomeIndex === 1 ? "YES" : "NO";
+  runtime2.log(`[Step 1] Parsed private bet input for marketId=${marketId.toString()}`);
+  runtime2.log(`[Step 1] Bettor=${bettorAddress}, recipient=${recipient}, token=${tokenAddress}`);
+  runtime2.log(`[Step 1] amount=${amount.toString()}, outcome=${outcomeLabel}, flags=${JSON.stringify(flags)}`);
+  const privateTransferRequest = {
+    account: bettorAddress,
+    recipient,
+    token: tokenAddress,
+    amount: amount.toString(),
+    flags,
+    timestamp,
+    auth
+  };
+  runtime2.log("[Step 2] Executing private transfer via API...");
+  const privateTransferResponse = executePrivateTransfer(runtime2, privateTransferRequest);
+  const privateTransferId = privateTransferResponse.transaction_id ?? privateTransferResponse.id ?? "";
+  runtime2.log(`[Step 2] Private transfer completed. transaction_id=${privateTransferId || "unavailable"}`);
+  runtime2.log("[Step 3] Updating aggregate pool totals onchain...");
+  const aggregateTxHash = writePrivateBetAggregate(runtime2, marketId, outcomeIndex, amount);
+  runtime2.log(`[Step 3] Aggregate update tx hash: ${aggregateTxHash}`);
+  runtime2.log("[Step 4] Writing private bet audit document to Firestore...");
+  const firestoreResult = writePrivateBetToFirestore(runtime2, {
+    marketId,
+    outcome: outcomeLabel,
+    outcomeIndex,
+    amount: amount.toString(),
+    bettorAddress,
+    recipient,
+    tokenAddress,
+    flags,
+    privateTransferId: privateTransferId || `private-transfer-${timestamp}`,
+    privateTransferResponse: JSON.stringify(privateTransferResponse),
+    aggregateTxHash,
+    contractAddress: runtime2.config.evms[0].marketAddress
+  });
+  runtime2.log(`[Step 4] Firestore document: ${firestoreResult.name}`);
+  runtime2.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  return aggregateTxHash;
+}
+var parseBigIntField = (value2, fieldName) => {
+  const valueAsString = typeof value2 === "number" ? value2.toString() : requiredString(value2, fieldName);
+  if (!/^\d+$/u.test(valueAsString)) {
+    throw new Error(`${fieldName} must be a positive integer string`);
+  }
+  return BigInt(valueAsString);
+};
+var parseTimestamp = (value2) => {
+  const valueAsString = typeof value2 === "number" ? value2.toString() : requiredString(value2, "timestamp");
+  if (!/^\d+$/u.test(valueAsString)) {
+    throw new Error("timestamp must be a numeric value");
+  }
+  const parsed = Number(valueAsString);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error("timestamp must be a valid positive number");
+  }
+  return parsed;
+};
+var normalizeFlags = (value2) => {
+  if (!value2)
+    return [];
+  return value2.filter((item) => typeof item === "string" && item.trim().length > 0);
+};
+var parseOutcomeIndex = (explicitOutcomeIndex, outcome) => {
+  if (explicitOutcomeIndex !== undefined) {
+    if (explicitOutcomeIndex === 0 || explicitOutcomeIndex === "0")
+      return 0;
+    if (explicitOutcomeIndex === 1 || explicitOutcomeIndex === "1")
+      return 1;
+    throw new Error("outcomeIndex must be 0 (NO) or 1 (YES)");
+  }
+  const normalized = (outcome ?? "").trim().toUpperCase();
+  if (normalized === "NO")
+    return 0;
+  if (normalized === "YES")
+    return 1;
+  throw new Error('Provide outcomeIndex (0/1) or outcome ("YES"/"NO")');
+};
+var requiredString = (value2, fieldName) => {
+  if (!value2 || value2.trim().length === 0) {
+    throw new Error(`${fieldName} is required`);
+  }
+  return value2.trim();
+};
 var initWorkflow = (config) => {
   const httpCapability = new cre.capabilities.HTTPCapability;
   const httpTrigger = httpCapability.trigger({});
-  return [
-    cre.handler(httpTrigger, onHttpTrigger)
-  ];
+  return [cre.handler(httpTrigger, onPrivateBetHttpTrigger)];
 };
 async function main() {
   const runner = await Runner.newRunner();
