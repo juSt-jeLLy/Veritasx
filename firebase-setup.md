@@ -88,6 +88,11 @@ service cloud.firestore {
     match /privateBets/{document} {
       allow read, write: if isAuthed();
     }
+
+    // Private settlement workflow documents
+    match /privateSettlements/{document} {
+      allow read, write: if isAuthed();
+    }
   }
 }
 ```

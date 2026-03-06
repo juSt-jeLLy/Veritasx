@@ -1,503 +1,260 @@
-# Chainlink Runtime Environment (CRE) × Google Cloud – Prediction Market Demo
+# VeritasX: CRE + Gemini + Firebase Prediction Market
 
-This repository demonstrates an end-to-end **automated, AI-powered prediction market** using the **Chainlink Runtime Environment (CRE)** integrated with Google's Gemini AI and Firebase.
+This repository contains an end-to-end prediction market demo built with Chainlink Runtime Environment (CRE), Gemini, Firebase, and Sepolia smart contracts.
 
-## Table of Contents
+It supports:
+- market creation by HTTP workflow
+- private YES/NO betting flow with EIP-712 signatures
+- aggregate pool updates onchain
+- settlement triggered from contract events
+- Firestore storage for offchain indexing and settlement support
 
-- [What This Demo Does](#what-this-demo-does)
-- [Repository Structure](#repository-structure)
-  - [1. CRE Workflow Directory](#1-cre-workflow-directory)
-  - [2. Contracts Directory](#2-contracts-directory)
-  - [3. Frontend Directory](#3-frontend-directory)
-- [How It Works](#how-it-works)
-  - [Architecture Overview](#architecture-overview)
-  - [Flow of Operations](#flow-of-operations)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-  - [Option 1: Test CRE Workflow Only (Fastest)](#option-1-test-cre-workflow-only-fastest)
-  - [Option 2: Full End-to-End Test](#option-2-full-end-to-end-test)
-- [Security Considerations](#security-considerations)
+## What is in this repo
 
-## What This Demo Does
+- `contracts/`: public prediction market contract (`SimpleMarket.sol`) + Foundry tests/scripts.
+- `cre-workflow/`: CRE project and workflow code (create, private bet, settlement, private settlement).
+- `private contract/`: private token + vault + API integration examples (ACE/compliant private transfer demo).
+- `frontend/`: Next.js app for reading settlement/audit data.
+- `firebase-setup.md`: Firebase setup and checks.
+- `firestore.rules`: Firestore rule template used by workflows.
 
-This project showcases how to build a fully automated prediction market system where:
-
-1. Users create markets by asking binary (Yes/No) questions on-chain
-2. Users stake ERC-20 tokens (USDC) to make predictions
-3. After the market closes, anyone can request settlement
-4. **CRE automatically triggers** when it detects the settlement request
-5. **Gemini AI** determines the factual outcome using Google search grounding
-6. **CRE submits** a cryptographically signed settlement report back on-chain
-7. Settlement data is stored in **Firestore** for audit and display
-8. Winners claim their proportional share of the total pool
-
-**Key Technologies:**
-- **Smart Contracts**: Solidity prediction market with CRE receiver integration
-- **CRE**: Event-driven workflow orchestration
-- **Gemini AI**: Automated fact-checking and outcome determination
-- **Firebase/Firestore**: Audit trail and data persistence
-- **Next.js Frontend**: User interface for viewing settlement history
-
-## Repository Structure
-
-This repository contains three main components:
-
-```
-.
-├── contracts/              # Foundry project: SimpleMarket.sol and deployment scripts
-├── cre-workflow/           # CRE TypeScript workflow for AI-powered settlement
-├── frontend/               # Next.js app for viewing settlement data from Firestore
-├── firebase-setup.md       # Firebase/Firestore configuration guide
-└── README.md              # This file
-```
-
-### 1. CRE Workflow Directory
-
-A Chainlink Runtime Environment project containing:
-- TypeScript workflow orchestration
-- Gemini AI integration
-- EVM settlement logic
-- Firestore database integration
-- Configuration and secrets management
-
-**[Read the CRE Workflow README →](cre-workflow/README.md)**
-
-### 2. Contracts Directory
-
-A Foundry project containing:
-- `SimpleMarket.sol` - Binary prediction market smart contract
-- Comprehensive test suite
-- Deployment and interaction scripts
-- CRE receiver template integration
-
-**[Read the Contracts README →](contracts/README.md)**
-
-### 3. Frontend Directory
-
-A Next.js application that:
-- Connects to Firestore database
-- Displays recent market settlements
-- Shows AI responses, confidence scores, and transaction hashes
-- Provides a simple UI for monitoring the system
-
-## How It Works
-
-### Architecture Overview
+## Architecture
 
 ```mermaid
 graph TD
-    A[User creates market] -->|On-chain| B[SimpleMarket.sol]
-    C[User stakes USDC] -->|On-chain| B
-    D[User requests settlement] -->|On-chain| B
-    B -->|Emits SettlementRequested| E[CRE Workflow]
-    E -->|HTTP Request| F[Gemini AI]
-    F -->|Returns outcome + confidence| E
-    E -->|Signed report| B
-    B -->|Updates market status| G[Market settled]
-    E -->|HTTP Write| H[Firestore]
-    H -->|Reads data| I[Next.js Frontend]
-    G -->|Winners claim| J[Payouts]
-```
-
-### Flow of Operations
-
-```mermaid
-sequenceDiagram
-    participant User as User/Operator
-    participant Contract as SimpleMarket Contract
-    participant CRE as CRE Workflow
-    participant Gemini as Gemini AI
-    participant Firebase as Firestore DB
-    participant Frontend as Next.js App
-
-    User->>Contract: Deploy SimpleMarket on Sepolia
-    User->>Contract: Create market with question
-    User->>Contract: Stake USDC on prediction
-    Note over User,Contract: Market closes after 3 minutes
-    User->>Contract: Request settlement
-    Contract->>CRE: Emit SettlementRequested event
-    CRE->>CRE: Detect log and decode event
-    CRE->>Gemini: POST question with search grounding
-    Gemini->>CRE: Return {result, confidence, responseId}
-    CRE->>CRE: Validate and encode report
-    CRE->>CRE: Sign with ECDSA/keccak256
-    CRE->>Contract: Submit onReport() transaction
-    Contract->>Contract: Decode and settle market
-    CRE->>Firebase: Write settlement data
-    User->>Contract: Claim winnings (if won)
-    Frontend->>Firebase: Query settlement history
-    Firebase->>Frontend: Return documents
+  A[Create Market HTTP Trigger] --> B[SimpleMarket Contract]
+  C[Private Bet HTTP Trigger] --> D[Private Transfer API]
+  D --> E[Firestore privateBets]
+  C --> F[Onchain aggregate update]
+  B --> G[SettlementRequested Event]
+  G --> H[Settlement CRE Workflow]
+  H --> I[Gemini API]
+  H --> J[Onchain settle report]
+  H --> K[Firestore settlement docs]
 ```
 
 ## Prerequisites
 
-To run this demo, you'll need:
+- Node.js 20+
+- Bun
+- Foundry (`forge`, `cast`)
+- CRE CLI (`cre`)
+- Sepolia RPC URL
+- Wallet funded with Sepolia ETH
+- Gemini API key
+- Firebase project with:
+  - Firestore enabled
+  - Authentication enabled
+  - Anonymous sign-in enabled
 
-- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Node.js](https://nodejs.org/en/download) v20+
-- [Bun](https://bun.sh/) (JavaScript runtime and package manager)
-- [Foundry/Forge](https://github.com/foundry-rs/foundry) (`forge`, `cast`, `anvil`)
-- [Chainlink Runtime Environment CLI](https://docs.chain.link/)
-- [Gemini API Key](https://aistudio.google.com/api-keys)
-- [Firebase Project](./firebase-setup.md) with Firestore enabled
-- [ETH Sepolia funds](https://faucets.chain.link/) for gas
-- [USDC on Sepolia](https://faucet.circle.com/) for market participation
+## Environment setup
 
-## Quick Start
+### 1) CRE workflow env
 
-### Option 1: Test CRE Workflow Only (Fastest)
-
-This repo ships with the address of a pre-deployed contract and transaction for immediate testing.
+From repo root:
 
 ```bash
-# 1. Install dependencies
-cd cre-workflow/prediction-market-demo
-bun install
-
-# 2. Configure RPC endpoint
-# Edit cre-workflow/project.yaml and set your Sepolia RPC URL for local-simulation
-
-
-cd ..  # Back to cre-workflow directory
-
-# 3. Set environment variables. Create .env file from example
+cd cre-workflow
 cp .env.example .env
-
-# Populate the .env file with your ETH private key, Gemini API key, Firebase API key, and Firebase project ID.
-
-# 4. Run simulation
-cre workflow simulate prediction-market-demo --target local-simulation
-
-# 5. When prompted, use this pre-deployed transaction:
-# Transaction hash: 0x24f3ccee54786d754ee07e4b8578ff6916c3cfca6e0f6fd71675aaad0039bc19
-# Event index: 0
 ```
 
-**Environment Variables** (`cre-workflow/.env`):
-```bash
-CRE_ETH_PRIVATE_KEY=0x...       # Private key with Sepolia ETH
-CRE_TARGET=local-simulation
-GEMINI_API_KEY_VAR=...          # From https://aistudio.google.com/api-keys
-FIREBASE_API_KEY_VAR=...        # From Firebase console
-FIREBASE_PROJECT_ID_VAR=...     # From Firebase console
-```
+Set:
 
-See the [prerequisites](#prerequisites) section for information on obtaining your Gemini and Firebase keys.
+- `CRE_ETH_PRIVATE_KEY`
+- `GEMINI_API_KEY_VAR`
+- `FIREBASE_API_KEY_VAR`
+- `FIREBASE_PROJECT_ID_VAR`
+- `ESCROW_PRIVATE_KEY` (for private payout execution paths)
 
-### Option 2: Full End-to-End Test
+### 2) Firestore rules
 
-#### Step 1: Clone Repository
+Use rules from:
 
-```bash
-git clone https://github.com/smartcontractkit/cre-gcp-prediction-market-demo.git
-cd cre-gcp-prediction-market-demo
-```
+- `./firestore.rules`
 
+Then publish in Firebase Console -> Firestore Database -> Rules.
 
+## CRE targets and workflow files
 
-#### Step 2: Install Contract Dependencies
+`cre-workflow/project.yaml` defines chain RPC targets.
+
+`cre-workflow/prediction-market-demo/workflow.yaml` maps targets to workflow entrypoints:
+
+- `local-simulation` -> `createmarketworkflow.ts`
+- `private-bet-local-simulation` -> `privatebetworkflow.ts`
+- `staging` -> `main.ts` (standard settlement)
+- `private-settlement-local-simulation` -> `privateSettlementWorkflow.ts`
+
+## Main workflows
+
+Run all commands from:
 
 ```bash
-cd contracts
-forge install
+cd cre-workflow
 ```
 
+### A) Create market workflow
 
-
-#### Step 3: Set Environment Variables for Contract Deployment
+Simulate:
 
 ```bash
-export PRIVATE_KEY=...
-export RPC_URL=...
+cre workflow simulate ./prediction-market-demo \
+  --target local-simulation \
+  --trigger-index 0 \
+  --http-payload @./prediction-market-demo/create-market-payload.json \
+  --non-interactive
 ```
 
-
-
-#### Step 4: Deploy a New SimpleMarket
-
-The provided constructor arguments are: (1) the payment token address (USDC on ETH Sepolia) and (2) the CRE forwarder address ([ETH Sepolia CRE Simulation Forwarder](https://docs.chain.link/cre/guides/workflow/using-evm-client/supported-networks-ts#understanding-forwarder-addresses)).
+Broadcast:
 
 ```bash
-forge create src/SimpleMarket.sol:SimpleMarket \
-  --broadcast \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY \
-  --constructor-args 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 0x15fC6ae953E024d975e77382eEeC56A9101f9F88
+cre workflow simulate ./prediction-market-demo \
+  --target local-simulation \
+  --trigger-index 0 \
+  --http-payload @./prediction-market-demo/create-market-payload.json \
+  --non-interactive \
+  --broadcast
 ```
 
-Note down the new contract address and export it:
-
-```bash
-export MARKET_ADDRESS=...
-```
-
-> [!WARNING]
-> The provided [`ReceiverTemplate.sol`](./contracts/src/interfaces/ReceiverTemplate.sol) includes setter functions to enable access control of the `onReport` function which are not used in this end to end test. See [the CRE docs](https://docs.chain.link/cre/guides/workflow/using-evm-client/onchain-write/building-consumer-contracts#34-configuring-permissions) for best practices.
-
-
-
-#### Step 5: Get the Next Available Market ID
-
-Check the `nextMarketId`:
-
-```bash
-cast call $MARKET_ADDRESS \
-  "nextMarketId()" \
-  --rpc-url $RPC_URL
-```
-
-Use Foundry's `cast` command to convert this from hex to decimal:
-
-```bash
-cast to-dec 0x000000000000000000000000000000000000000000000000000000000000001c
-# Example output: 28
-# This number increments each time a new market is created.
-# The first market ID for a new contract will be 0.
-```
-
-This marketID will be used in future steps.
-
-
-#### Step 6: Create a New Market
-
-```bash
-cast send $MARKET_ADDRESS \
-  "newMarket(string)" \
-  "Will the buffalo bills win the 2025 superbowl?" \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
-```
-
-> [!IMPORTANT]
-> Markets close after 3 minutes. Complete both step 7 and 6 before it closes!
-
-#### Step 7: (Optional) Approve USDC for wager
-
-Approve the SimpleMarket contract to spend your USDC. 
-
-```bash
-# USDC on Sepolia: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
-# Amount: In USDC (6 decimals), so 1000000 = 1 USDC
-cast send 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 \
-  "approve(address,uint256)" \
-  $MARKET_ADDRESS \
-  1000000 \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
-```
-
-#### Step 8: (Optional) Place a prediction
-
-Place your prediction, wagering some amount of USDC.
-
-```bash
-# MarketID: Your market ID from step 5
-# Outcome: 1 = No, 2 = Yes
-# Amount: In USDC (6 decimals), so 1000000 = 1 USDC
-cast send $MARKET_ADDRESS \
-  "makePrediction(uint256,uint8,uint256)" \
-  0 \
-  2 \
-  1000000 \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
-```
-
-#### Step 9: Install Workflow Dependencies
-
-```bash
-cd ../cre-workflow/prediction-market-demo
-bun install
-```
-
-
-
-#### Step 10: Configure Workflow Settings
-
-Add your market address to `cre-workflow/prediction-market-demo/config.json`:
+Payload shape:
 
 ```json
 {
-  "geminiModel": "gemini-2.5-flash",
-  "evms": [
-    {
-      "marketAddress": "",
-      "chainSelectorName": "ethereum-testnet-sepolia",
-      "gasLimit": "1000000"
-    }
-  ]
+  "question": "Will BTC close above $120,000 by Dec 31, 2026?",
+  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
+  "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
 }
 ```
 
+### B) Private YES/NO bet workflow
 
+The private bet payload requires an EIP-712 signature (`auth`).
 
-#### Step 11: Configure RPC Endpoint
+Use the helper function documented in:
 
-Add ETH Sepolia RPC URL to `cre-workflow/project.yaml`:
+- `cre-workflow/prediction-market-demo/workflow-commands.md`
+- `cre-workflow/prediction-market-demo/workflow-runbook.md`
 
-```yaml
-local-simulation:
-  rpcs:
-    - chain-name: ethereum-testnet-sepolia
-      url: <your_rpc_url>
-```
+Key flow:
 
+1. Generate payload (`YES` or `NO`) with signature.
+2. Run private-bet workflow with that payload.
+3. Workflow calls private transfer API.
+4. Workflow writes bet doc to Firestore `privateBets`.
+5. Workflow updates onchain market aggregates.
 
-
-#### Step 12: Setup Environment Variables
-
-Navigate to the `cre-workflow` directory and copy the example `.env`:
-
-```bash
-cd ..
-cp .env.example .env
-```
-
-
-
-#### Step 13: Populate Environment Variables
-
-Open `.env` and add your private key, gemini key, firebase key, and firebase project id.
-
-```
-CRE_ETH_PRIVATE_KEY=
-
-# Profile to use for this environment (e.g. local-simulation, production, staging)
-CRE_TARGET=local-simulation
-
-# Gemini configuration: API Key
-GEMINI_API_KEY_VAR=
-
-# Firebase configuration: API Key & Project Id
-FIREBASE_API_KEY_VAR=
-FIREBASE_PROJECT_ID_VAR=
-
-```
-
-#### Step 14: Request Settlement of the Market
-
-> [!IMPORTANT]
->  Market must be closed before settlement can be requested. By default, markets close after 3 minutes. Make sure to use the market ID obtained from step 5.
+Broadcast command:
 
 ```bash
-cast send $MARKET_ADDRESS \
-  "requestSettlement(uint256)" \
-  0 \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
+cre workflow simulate ./prediction-market-demo \
+  --target private-bet-local-simulation \
+  --trigger-index 0 \
+  --http-payload @./prediction-market-demo/private-bet-payload.json \
+  --non-interactive \
+  --broadcast
 ```
 
-**Note the Transaction Hash** - you will need this one!
+### C) Standard settlement workflow (`staging` target)
 
-#### Step 15: (Optional) Simulate the Workflow
-
-Run CRE in simulation mode to test the workflow without the `--broadcast` flag:
+Triggered from a tx containing `SettlementRequested` log.
 
 ```bash
-cre workflow simulate prediction-market-demo --target local-simulation
+cre workflow simulate ./prediction-market-demo \
+  --target staging \
+  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
+  --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive \
+  --broadcast
 ```
 
-**Note:** This will:
-- Run CRE locally in simulation mode
-- Make a real HTTP request to Gemini
-- Make a real HTTP POST request to Firebase
-- **NOT** write results on-chain (no `--broadcast` flag)
+### D) Private settlement workflow (`private-settlement-local-simulation`)
 
+Current trigger: `SettlementRequested(uint256,string)` event.
 
-When prompted, enter the txn hash from step 14 and enter the log index of `0`.
+Flow:
 
+1. Decode marketId + question from event log.
+2. Resolve outcome with Gemini.
+3. Read `privateBets` from Firestore for that market.
+4. Build totals/counts.
+5. Submit final onchain settlement report.
+6. Attempt to write settlement audit to `privateSettlements`.
 
-
-#### Step 16: Broadcast the Workflow Transaction
-
-Execute the workflow and write results on-chain:
+Run:
 
 ```bash
-cre workflow simulate prediction-market-demo --target local-simulation --broadcast
+cre workflow simulate ./prediction-market-demo \
+  --target private-settlement-local-simulation \
+  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
+  --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive \
+  --broadcast
 ```
 
-When prompted, enter the txn hash from step 14 and enter the log index of `0`.
+## End-to-end operational sequence
 
-#### Step 16.5: (Conditional, see warning) Manual market settlement
+Use this order for one market:
 
-> [!IMPORTANT]
-> This function can only be called if the response from Gemini was INCONCLUSIVE. This is a fallback mechanism to allow operators to manually settle inconclusive markets.
+1. Create market (create workflow).
+2. Generate YES/NO signed payloads.
+3. Broadcast private bets on both sides.
+4. Close market onchain (`closeMarket(marketId)`).
+5. Request settlement onchain (`requestSettlement(marketId)`).
+6. Broadcast settlement workflow from request tx hash.
+7. Verify onchain state (`getMarket`, `getPoolSizes`) and logs.
+8. Verify Firestore docs.
+
+Detailed command blocks are in:
+
+- `cre-workflow/prediction-market-demo/workflow-commands.md`
+- `cre-workflow/prediction-market-demo/workflow-runbook.md`
+
+## Firestore checks
+
+Anonymous auth check:
 
 ```bash
-# Manually settle a market that Gemini could not settle
-# MarketID: Your market ID from step 5
-# Outcome: 1 = No, 2 = Yes
-cast send $MARKET_ADDRESS \
-  "settleMarketManually(uint256,uint8)" \
-  0 \
-  2 \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
+cd cre-workflow
+set -a && source .env && set +a
+curl -sS -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY_VAR}" \
+  -H "Content-Type: application/json" \
+  -d '{"returnSecureToken":true}'
 ```
 
-#### Step 17: (Optional) Claim your prediction
+Expected: JSON containing `idToken`.
 
-```bash
-# Claim your wager after the market is settled
-# MarketID: Your market ID from step 5
-cast send $MARKET_ADDRESS \
-  "claimPrediction(uint256)" \
-  0 \
-  --rpc-url $RPC_URL \
-  --private-key $PRIVATE_KEY
-```
+If Firestore write fails with `PERMISSION_DENIED`, confirm:
+- correct Firebase project id and API key are from same project
+- Authentication anonymous provider is enabled
+- rules allow authenticated reads/writes for:
+  - `/demo/{doc}`
+  - `/privateBets/{doc}`
+  - `/privateSettlements/{doc}`
 
-If you made the correct prediction, your portion of the wager pool will be returned to you.
+## Contract notes
 
-Potential errors thrown:
-```
-NotSettledYet(Status current)   // Market hasn't been settled yet
-AlreadyClaimed()                // User already claimed their winnings
-NoWinners()                     // No one predicted the winning side
-IncorrectPrediction()           // User made the incorrect prediction
-```
+`contracts/src/SimpleMarket.sol` uses:
 
-#### Step 18: Setup the Frontend
+- `Status`: `Open`, `SettlementRequested`, `Settled`, `NeedsManual`
+- `Outcome`: `None`, `No`, `Yes`, `Inconclusive`
 
-Navigate to the frontend directory:
+Settlement report writes outcome + confidence + aggregate totals/counts.
 
-```bash
-cd ../frontend
-bun install
-```
+## Docs map
 
+- Main CRE docs: `cre-workflow/README.md`
+- Command reference: `cre-workflow/prediction-market-demo/workflow-commands.md`
+- Runbook: `cre-workflow/prediction-market-demo/workflow-runbook.md`
+- Private settlement flow note: `cre-workflow/prediction-market-demo/private-settlement-workflow.md`
+- Contracts docs: `contracts/README.md`
+- Private token/API docs: `private contract/README.md`
+- Firebase guide: `firebase-setup.md`
 
-#### Step 19: Configure Frontend Environment
+## Safety notes
 
-Copy the example environment file:
+- Do not commit real private keys or API keys.
+- Use testnet funds/accounts only.
+- This repo is demo/hackathon-oriented and not production-hardened.
 
-```bash
-cp .env.local.example .env.local
-```
-
-Open `.env.local` and add your Firebase project details:
-```
-NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-auth-domain"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
-```
-
-
-
-#### Step 20: Run the Frontend
-
-```bash
-bun run dev
-```
-
-The frontend will be available at `http://localhost:3000`
-
-## Security Considerations
-
-**⚠️ Important Notes:**
-
-1. **This is a demo project** - Not audited or production-ready
-2. **Never commit secrets** - Keep `.env` out of version control
-3. **Test with small amounts** - Use testnet tokens only
-4. **Verify AI responses** - Gemini responses may be incorrect or biased
-5. **Monitor gas usage** - Settlement transactions consume gas from your account

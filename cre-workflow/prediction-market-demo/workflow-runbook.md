@@ -166,3 +166,24 @@ cre workflow simulate ./prediction-market-demo \
   --non-interactive \
   --broadcast
 ```
+
+## 7) Private settlement flow (event trigger)
+
+```bash
+# 1) Close market so MarketClosed event is emitted (example: market 1)
+set -a && source .env && set +a
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=1n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
+
+# 2) Simulate settlement workflow using the close tx hash
+cre workflow simulate ./prediction-market-demo \
+  --target private-settlement-local-simulation \
+  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
+  --evm-event-index 0
+
+# 3) Broadcast settlement workflow
+cre workflow simulate ./prediction-market-demo \
+  --target private-settlement-local-simulation \
+  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
+  --evm-event-index 0 \
+  --broadcast
+```

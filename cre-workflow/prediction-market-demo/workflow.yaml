@@ -49,4 +49,21 @@ private-bet-staging:
     workflow-path: "./privatebetworkflow.ts"
     config-path: "./config.json"
     secrets-path: "../secrets.yaml"
-    
+
+# ==========================================================================
+private-settlement-local-simulation:
+  user-workflow:
+    workflow-name: "prediction-market-private-settlement"
+  workflow-artifacts:
+    workflow-path: "./privateSettlementWorkflow.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
+
+# ==========================================================================
+private-settlement-staging:
+  user-workflow:
+    workflow-name: "prediction-market-private-settlement"
+  workflow-artifacts:
+    workflow-path: "./privateSettlementWorkflow.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"

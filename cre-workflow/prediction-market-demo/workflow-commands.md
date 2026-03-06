@@ -222,6 +222,7 @@ If you get `CONFIGURATION_NOT_FOUND`, fix Firebase setup:
 Current workflows write to:
 - settlement docs in `/demo/{doc}`
 - private bet docs in `/privateBets/{doc}`
+- private settlement docs in `/privateSettlements/{doc}`
 
 Rules must allow authenticated reads/writes for both paths.
 
@@ -288,5 +289,42 @@ cre workflow simulate ./prediction-market-demo \
   --trigger-index 0 \
   --http-payload @./private-bet-payload-no.json \
   --non-interactive \
+  --broadcast
+```
+
+## 6) Private Settlement Workflow (EVM trigger on `MarketClosed`)
+
+This workflow does:
+- decode `MarketClosed(marketId)`
+- read market question from contract
+- resolve winner with Gemini
+- scan `privateBets` in Firestore for that market
+- pay winners via private transfer API from escrow account
+- write final onchain settlement report
+- write settlement audit to `privateSettlements`
+
+### 6.1 Close market onchain (emits `MarketClosed`)
+
+```bash
+set -a && source .env && set +a
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=1n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
+```
+
+### 6.2 Simulate private settlement from close tx hash
+
+```bash
+cre workflow simulate ./prediction-market-demo \
+  --target private-settlement-local-simulation \
+  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
+  --evm-event-index 0
+```
+
+### 6.3 Broadcast private settlement
+
+```bash
+cre workflow simulate ./prediction-market-demo \
+  --target private-settlement-local-simulation \
+  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
+  --evm-event-index 0 \
   --broadcast
 ```
