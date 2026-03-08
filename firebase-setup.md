@@ -1,6 +1,11 @@
 # Firebase Setup Guide
 
-This guide walks you through creating a Firebase project, enabling Firestore and Authentication.
+This guide walks you through creating a Firebase project, enabling Firestore and Authentication for the VeritasX prediction market platform.
+
+Firebase is used for:
+- **Offchain bet storage**: Private bet records stored in `privateBets` collection
+- **Settlement audit trail**: Settlement results stored in `privateSettlements` and `demo` collections
+- **Anonymous authentication**: CRE workflows authenticate via Firebase anonymous sign-in to read/write Firestore
 
 ---
 

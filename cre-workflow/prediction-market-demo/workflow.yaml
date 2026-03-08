@@ -26,9 +26,9 @@ local-simulation:
 # ==========================================================================
 staging:
   user-workflow:
-    workflow-name: "prediction-market-demo"
+    workflow-name: "prediction-market-private-settlement"
   workflow-artifacts:
-    workflow-path: "./main.ts"
+    workflow-path: "./privateSettlementWorkflow.ts"
     config-path: "./config.json"
     secrets-path: "../secrets.yaml"
 

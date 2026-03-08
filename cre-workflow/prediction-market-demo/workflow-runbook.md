@@ -1,42 +1,39 @@
-# Workflow Runbook
+# Workflow Runbook — Quick Operations Guide
 
-Quick command guide for create market, private bet, and settlement workflows.
+Condensed command sequences for the VeritasX prediction market. All commands from `cre-workflow/`.
 
-## 1) Go to CRE workspace
+## Setup
 
 ```bash
-cd "/Users/yagnesh/Desktop/2026 HACKATHONS/cre-gcp-prediction-market-demo/cre-workflow"
+cd cre-workflow
+set -a && source .env && set +a
 ```
 
-## 2) Create market workflow
+## 1) Create Market
 
 ```bash
 cre workflow simulate ./prediction-market-demo \
   --target local-simulation \
   --trigger-index 0 \
-  --http-payload @./create-market-payload.json \
-  --non-interactive
-```
-
-Broadcast:
-
-```bash
-cre workflow simulate ./prediction-market-demo \
-  --target local-simulation \
-  --trigger-index 0 \
-  --http-payload @./create-market-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/create-market-payload.json" \
   --non-interactive \
   --broadcast
 ```
 
-## 3) Private bet workflow
+Get market ID:
 
-Load helper command to generate EIP-712 signature + payload:
+```bash
+node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getMarketCount() view returns (uint256)'],p); const n=await c.getMarketCount(); console.log('newMarketId=',(Number(n)-1));"
+```
+
+## 2) Place Private Bets
+
+Load payload generator (paste once):
 
 ```bash
 generate_private_bet_payload() {
   local market_id="$1"
-  local outcome="$2"   # YES or NO
+  local outcome="$2"
   local out_file="$3"
   local amount_wei="${4:-1000000000000000000}"
   set -a && source .env && set +a
@@ -44,146 +41,81 @@ generate_private_bet_payload() {
 }
 ```
 
-Generate payloads:
+Generate and broadcast:
 
 ```bash
-generate_private_bet_payload 1 YES ./prediction-market-demo/private-bet-payload-yes.json
-generate_private_bet_payload 1 NO ./prediction-market-demo/private-bet-payload-no.json
-generate_private_bet_payload 1 YES ./prediction-market-demo/private-bet-payload.json
-```
+# Generate payloads (replace <MID> with market ID)
+generate_private_bet_payload <MID> YES ./prediction-market-demo/private-bet-payload-yes.json
+generate_private_bet_payload <MID> NO ./prediction-market-demo/private-bet-payload-no.json
 
-Simulate default payload:
-
-```bash
+# Broadcast YES bet
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload.json \
-  --non-interactive
-```
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-yes.json" \
+  --non-interactive \
+  --broadcast
 
-Broadcast:
-
-```bash
+# Broadcast NO bet
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-no.json" \
   --non-interactive \
   --broadcast
 ```
 
-Broadcast YES and NO payloads:
+## 3) Close Market
 
 ```bash
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-yes.json \
-  --non-interactive \
-  --broadcast
-
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-no.json \
-  --non-interactive \
-  --broadcast
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=<MID>n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
 ```
 
-## 4) Settlement workflow
+## 4) Request Settlement
 
 ```bash
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=<MID>n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function requestSettlement(uint256)'], wallet); const tx=await market.requestSettlement(marketId); console.log('requestSettlementTx=', tx.hash); await tx.wait();"
+```
+
+Save the `requestSettlementTx` hash.
+
+## 5) Run Private Settlement Workflow
+
+```bash
+# Simulate (dry run)
 cre workflow simulate ./prediction-market-demo \
   --target staging \
-  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
-  --evm-event-index 0
-```
-
-Broadcast:
-
-```bash
-cre workflow simulate ./prediction-market-demo \
-  --target staging \
-  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
+  --evm-tx-hash <REQUEST_SETTLEMENT_TX_HASH> \
   --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive
+
+# Broadcast (execute)
+cre workflow simulate ./prediction-market-demo \
+  --target staging \
+  --evm-tx-hash <REQUEST_SETTLEMENT_TX_HASH> \
+  --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive \
   --broadcast
 ```
 
-## 5) Firebase validation (required for Firestore writes)
-
-Anonymous sign-in check:
+## 6) Verify
 
 ```bash
-set -a && source .env && set +a
+# On-chain state
+node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getMarket(uint256) view returns (string,uint256,uint256,uint8,uint8,uint256,string,uint16,uint256[2],uint256[2])'],p); const m=await c.getMarket(<MID>n); console.log('status:', ['Open','SettlementRequested','Settled','NeedsManual'][Number(m[3])]); console.log('outcome:', ['None','No','Yes','Inconclusive'][Number(m[4])]); console.log('confidence:', Number(m[7]));"
+
+# Pool sizes
+node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getPoolSizes(uint256) view returns (uint256,uint256,uint256,uint256)'],p); const r=await c.getPoolSizes(<MID>n); console.log({noTotal:r[0].toString(),yesTotal:r[1].toString(),noCount:r[2].toString(),yesCount:r[3].toString()});"
+```
+
+## 7) Firebase Validation
+
+```bash
 curl -sS -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY_VAR}" \
   -H "Content-Type: application/json" \
   -d '{"returnSecureToken":true}'
 ```
 
-If response shows `CONFIGURATION_NOT_FOUND`:
-- use Web API key from the same Firebase project as `FIREBASE_PROJECT_ID_VAR`
-- enable Firebase Authentication
-- enable Anonymous provider
-
-Rules used by this repo are in `../firestore.rules` and must be set in Firebase Console -> Firestore Database -> Rules.
-
-## 6) Full test flow (new market + YES + NO)
-
-```bash
-TS=$(date +%s)
-cat > /tmp/create-market-e2e.json <<EOF
-{
-  "question": "E2E Test Market ${TS}: Will BTC close above \$120,000 by Dec 31, 2026?",
-  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
-  "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
-}
-EOF
-
-cre workflow simulate ./prediction-market-demo \
-  --target local-simulation \
-  --trigger-index 0 \
-  --http-payload @/tmp/create-market-e2e.json \
-  --non-interactive \
-  --broadcast
-
-node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getMarketCount() view returns (uint256)'],p); const n=await c.getMarketCount(); console.log('newMarketId=',(Number(n)-1));"
-
-generate_private_bet_payload <NEW_MARKET_ID> YES ./prediction-market-demo/private-bet-payload-yes.json
-generate_private_bet_payload <NEW_MARKET_ID> NO ./prediction-market-demo/private-bet-payload-no.json
-
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-yes.json \
-  --non-interactive \
-  --broadcast
-
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-no.json \
-  --non-interactive \
-  --broadcast
-```
-
-## 7) Private settlement flow (event trigger)
-
-```bash
-# 1) Close market so MarketClosed event is emitted (example: market 1)
-set -a && source .env && set +a
-node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=1n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
-
-# 2) Simulate settlement workflow using the close tx hash
-cre workflow simulate ./prediction-market-demo \
-  --target private-settlement-local-simulation \
-  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
-  --evm-event-index 0
-
-# 3) Broadcast settlement workflow
-cre workflow simulate ./prediction-market-demo \
-  --target private-settlement-local-simulation \
-  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
-  --evm-event-index 0 \
-  --broadcast
-```
+Expected: JSON with `idToken`. If `CONFIGURATION_NOT_FOUND`, check Firebase setup.

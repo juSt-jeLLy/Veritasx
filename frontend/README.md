@@ -1,44 +1,54 @@
-# Prediction Market Demo Frontend
+# VeritasX Frontend
 
-This Next.js application displays the most recent market settlements from the Firestore database.
+Next.js application for viewing prediction market settlement data from Firestore.
+
+Displays the most recent market settlements written by the CRE settlement workflows, including AI resolution outcomes, confidence scores, and payout summaries.
 
 ## Prerequisites
 
--   Node.js and pnpm installed.
--   A Firebase project with Firestore enabled. See [firebase-setup.md](../firebase-setup.md) for setup steps.
+- Node.js and pnpm installed
+- A Firebase project with Firestore enabled (see [firebase-setup.md](../firebase-setup.md))
 
 ## Getting Started
 
-1.  **Navigate to the `frontend` directory:**
+1. **Navigate to the frontend directory:**
 
     ```bash
     cd frontend
     ```
 
-2.  **Install Dependencies:**
+2. **Install dependencies:**
 
     ```bash
     pnpm install
     ```
 
-3.  **Configure Firebase Credentials:**
-    Create a `.env.local` file in this directory by copying the example:
+3. **Configure Firebase credentials:**
 
     ```bash
     cp .env.local.example .env.local
     ```
 
-    Open `.env.local` and add your Firebase project `apiKey`, `authDomain`, and `projectId`. You can find these details in your Firebase project settings. See [firebase setup](../firebase-setup.md) for more information.
+    Set your Firebase `apiKey`, `authDomain`, and `projectId` in `.env.local`.
 
-4.  **Set Firestore Security Rules:**
+4. **Set Firestore security rules:**
 
-    For the application to read data, you must configure your Firestore security rules to allow read access to the `demo` collection. You can set this in the Firebase console under Firestore Database > Rules. See [firebase setup](../firebase-setup.md) for more information.
+    Ensure rules allow read access to `demo`, `privateBets`, and `privateSettlements` collections. See [firebase-setup.md](../firebase-setup.md).
 
-5.  **Run the Development Server:**
+5. **Run the development server:**
 
     ```bash
     pnpm dev
     ```
 
-6.  **View the Application:**
-    Open your browser and navigate to [http://localhost:3000](http://localhost:3000). The application will display the 10 most recent documents from your `demo` collection in Firestore.
+6. **View the application:**
+
+    Open [http://localhost:3000](http://localhost:3000). The app displays the 10 most recent settlement documents from Firestore.
+
+## Firestore Collections
+
+| Collection | Written By | Contains |
+|---|---|---|
+| `demo` | Standard settlement workflow (`main.ts`) | Gemini response, outcome, confidence, tx hash |
+| `privateBets` | Private bet workflow (`privatebetworkflow.ts`) | Market ID, bettor, outcome, amount, token |
+| `privateSettlements` | Private settlement workflow (`privateSettlementWorkflow.ts`) | Full audit: outcome, confidence, pool totals, payout summary |

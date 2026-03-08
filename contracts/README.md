@@ -1,6 +1,8 @@
-# Contracts Directory
+# Contracts — SimpleMarket Prediction Market
 
-This directory contains a Foundry project implementing a binary prediction market smart contract (`SimpleMarket.sol`) that integrates with Chainlink Runtime Environment (CRE) for automated AI-powered settlement.
+This directory contains a Foundry project implementing a binary prediction market smart contract (`SimpleMarket.sol`) that integrates with **Chainlink Runtime Environment (CRE)** for automated AI-powered settlement and **Chainlink ACE** for privacy-preserving betting and payouts.
+
+The contract supports both public betting (via `makePrediction()`) and private betting (via CRE aggregate reports). In the private flow, individual bet details never appear on-chain — only aggregate pool totals are stored.
 
 ## Table of Contents
 
@@ -106,9 +108,11 @@ stateDiagram-v2
 - **Binary Outcomes**: Simple Yes/No prediction model
 - **ERC-20 Token Stakes**: Uses any ERC-20 token (configured at deployment)
 - **CRE Integration**: Receives cryptographically signed settlement reports
+- **Private Betting Support**: Accepts aggregate pool updates from CRE private bet workflows — individual bet details stay off-chain
+- **AI-Powered Settlement**: Gemini AI determines market outcomes with confidence scoring
 - **Proportional Payouts**: Winners split the total pool based on their stake
 - **Confidence Tracking**: Stores AI confidence scores (0-10000 basis points)
-- **Evidence URI**: Records Gemini response IDs for auditing
+- **Evidence URI**: Records Gemini response IDs for verifiable auditing
 - **Manual Override**: Allows operator intervention for inconclusive results
 - **Access Control**: Owner-managed forwarder address and workflow validation
 
@@ -344,6 +348,20 @@ forge script script/SettleMarketManually.s.sol \
 ```
 
 **Prerequisites**: Market status must be `NeedsManual`.
+
+## Private Settlement Integration
+
+In the VeritasX private flow, the contract interacts with CRE workflows that handle:
+
+1. **Private Bet Workflow** — Sends aggregate pool updates via CRE report (prefix `0x02`), containing `marketId`, `outcomeIndex`, and `amount`. The contract updates pool totals without knowing individual bettor details.
+
+2. **Private Settlement Workflow** — Sends settlement reports via `onReport()` with:
+   - Market outcome (YES/NO/INCONCLUSIVE from Gemini AI)
+   - Confidence score (0-10000 basis points)
+   - Aggregate bet totals and counts
+   - Gemini response ID as evidence URI
+
+After on-chain settlement, the CRE workflow handles private payouts to winners via the ACE API — these payout transactions never appear on the SimpleMarket contract.
 
 ## Interacting with Deployed Contracts
 

@@ -1,11 +1,12 @@
-# Workflow Commands
+# Workflow Commands — Complete Reference
 
-This file lists command snippets to run the existing and new workflows.
+All commands run from the `cre-workflow/` directory.
 
 ## 0) Setup
 
 ```bash
-cd "/Users/yagnesh/Desktop/2026 HACKATHONS/cre-gcp-prediction-market-demo/cre-workflow"
+cd cre-workflow
+set -a && source .env && set +a
 ```
 
 ## 1) Create Market Workflow (HTTP trigger)
@@ -16,24 +17,47 @@ cd "/Users/yagnesh/Desktop/2026 HACKATHONS/cre-gcp-prediction-market-demo/cre-wo
 cre workflow simulate ./prediction-market-demo \
   --target local-simulation \
   --trigger-index 0 \
-  --http-payload @./create-market-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/create-market-payload.json" \
   --non-interactive
 ```
 
-### Broadcast onchain
+### Broadcast on-chain
 
 ```bash
 cre workflow simulate ./prediction-market-demo \
   --target local-simulation \
   --trigger-index 0 \
-  --http-payload @./create-market-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/create-market-payload.json" \
   --non-interactive \
   --broadcast
 ```
 
-## 2) Private Bet Workflow (HTTP trigger + private transfer API + onchain aggregate update)
+### Payload format
 
-### 2.1 Generate EIP-712 signature + payload command (reusable)
+```json
+{
+  "question": "Will BTC close above $120,000 by Dec 31, 2026?",
+  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
+  "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
+}
+```
+
+### Get latest market ID
+
+```bash
+node --input-type=module -e "
+import { JsonRpcProvider, Contract } from 'ethers';
+const p = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
+const c = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function getMarketCount() view returns (uint256)'], p);
+const n = await c.getMarketCount();
+console.log('newMarketId=', Number(n) - 1);
+"
+```
+
+## 2) Private Bet Workflow (HTTP trigger + ACE private transfer + on-chain aggregate)
+
+### 2.1 EIP-712 payload generator (paste into terminal)
 
 ```bash
 generate_private_bet_payload() {
@@ -116,215 +140,246 @@ NODE
 }
 ```
 
-### 2.2 Generate YES payload (example)
+### 2.2 Generate YES payload
 
 ```bash
-generate_private_bet_payload 1 YES ./prediction-market-demo/private-bet-payload-yes.json
+generate_private_bet_payload <MARKET_ID> YES ./prediction-market-demo/private-bet-payload-yes.json
 ```
 
-### 2.3 Generate NO payload (example)
+### 2.3 Generate NO payload
 
 ```bash
-generate_private_bet_payload 1 NO ./prediction-market-demo/private-bet-payload-no.json
+generate_private_bet_payload <MARKET_ID> NO ./prediction-market-demo/private-bet-payload-no.json
 ```
 
-### 2.4 Generate default payload file used by workflow (`private-bet-payload.json`)
-
-```bash
-generate_private_bet_payload 1 YES ./prediction-market-demo/private-bet-payload.json
-```
-
-### 2.5 Simulate
+### 2.4 Simulate
 
 ```bash
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-yes.json" \
   --non-interactive
 ```
 
-### 2.6 Broadcast onchain
+### 2.5 Broadcast YES and NO bets
 
 ```bash
+# Broadcast YES bet (private transfer + Firestore write + on-chain aggregate)
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload.json \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-yes.json" \
+  --non-interactive \
+  --broadcast
+
+# Broadcast NO bet
+cre workflow simulate ./prediction-market-demo \
+  --target private-bet-local-simulation \
+  --trigger-index 0 \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-no.json" \
   --non-interactive \
   --broadcast
 ```
 
-### 2.7 Broadcast YES and NO payloads
+### 2.6 Verify aggregate pool update on-chain
 
 ```bash
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-yes.json \
-  --non-interactive \
-  --broadcast
-
-cre workflow simulate ./prediction-market-demo \
-  --target private-bet-local-simulation \
-  --trigger-index 0 \
-  --http-payload @./private-bet-payload-no.json \
-  --non-interactive \
-  --broadcast
+node --input-type=module -e "
+import { JsonRpcProvider, Contract } from 'ethers';
+const p = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
+const c = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function getPoolSizes(uint256) view returns (uint256,uint256,uint256,uint256)'], p);
+const r = await c.getPoolSizes(<MARKET_ID>n);
+console.log(JSON.stringify({
+  marketId: <MARKET_ID>,
+  noTotal: r[0].toString(),
+  yesTotal: r[1].toString(),
+  noCount: r[2].toString(),
+  yesCount: r[3].toString()
+}, null, 2));
+"
 ```
 
-### 2.8 Verify aggregate pool update onchain (Node RPC check)
+## 3) Close Market
+
+Close the market so no more bets can be placed.
 
 ```bash
-node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getPoolSizes(uint256) view returns (uint256,uint256,uint256,uint256)'],p); const r=await c.getPoolSizes(1n); console.log(JSON.stringify({marketId:1,noTotal:r[0].toString(),yesTotal:r[1].toString(),noCount:r[2].toString(),yesCount:r[3].toString()},null,2));"
+node --input-type=module -e "
+import { Wallet, JsonRpcProvider, Contract } from 'ethers';
+const marketId = <MARKET_ID>n;
+const provider = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
+const wallet = new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider);
+const market = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function closeMarket(uint256)'], wallet);
+const tx = await market.closeMarket(marketId);
+console.log('closeMarketTx=', tx.hash);
+await tx.wait();
+console.log('Market closed.');
+"
 ```
 
-## 3) Settlement Workflow (EVM log trigger)
+## 4) Request Settlement
 
-Use the transaction hash where `SettlementRequested` was emitted.
+Emits the `SettlementRequested(uint256,string)` event that triggers the CRE settlement workflow.
+
+```bash
+node --input-type=module -e "
+import { Wallet, JsonRpcProvider, Contract } from 'ethers';
+const marketId = <MARKET_ID>n;
+const provider = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
+const wallet = new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider);
+const market = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function requestSettlement(uint256)'], wallet);
+const tx = await market.requestSettlement(marketId);
+console.log('requestSettlementTx=', tx.hash);
+await tx.wait();
+console.log('Settlement requested. Use tx hash for CRE workflow.');
+"
+```
+
+**Save the `requestSettlementTx` hash** for Step 5.
+
+## 5) Private Settlement Workflow (EVM log trigger)
+
+The settlement workflow:
+- Decodes `SettlementRequested(marketId, question)` from the event
+- Queries Gemini AI to resolve the market question
+- Loads all private bets from Firestore
+- Settles market on-chain with aggregate totals
+- Executes private payouts to winners via ACE API
+- Writes settlement audit to Firestore
+
+### Simulate (dry run)
 
 ```bash
 cre workflow simulate ./prediction-market-demo \
   --target staging \
-  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
-  --evm-event-index 0
-```
-
-Broadcast settlement onchain:
-
-```bash
-cre workflow simulate ./prediction-market-demo \
-  --target staging \
-  --evm-tx-hash <TX_HASH_WITH_SETTLEMENT_REQUESTED_EVENT> \
+  --evm-tx-hash <REQUEST_SETTLEMENT_TX_HASH> \
   --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive
+```
+
+### Broadcast (execute for real)
+
+```bash
+cre workflow simulate ./prediction-market-demo \
+  --target staging \
+  --evm-tx-hash <REQUEST_SETTLEMENT_TX_HASH> \
+  --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive \
   --broadcast
 ```
 
-## 4) Firebase Checks (required for Firestore write)
+## 6) Verify Settlement
 
-### 4.1 Validate API key can mint anonymous token
+### Check on-chain market state
 
 ```bash
-set -a && source .env && set +a
+node --input-type=module -e "
+import { JsonRpcProvider, Contract } from 'ethers';
+const p = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
+const c = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function getMarket(uint256) view returns (string,uint256,uint256,uint8,uint8,uint256,string,uint16,uint256[2],uint256[2])'], p);
+const m = await c.getMarket(<MARKET_ID>n);
+console.log('question:', m[0]);
+console.log('status:', ['Open','SettlementRequested','Settled','NeedsManual'][Number(m[3])]);
+console.log('outcome:', ['None','No','Yes','Inconclusive'][Number(m[4])]);
+console.log('confidence:', Number(m[7]));
+
+const c2 = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
+  ['function getPoolSizes(uint256) view returns (uint256,uint256,uint256,uint256)'], p);
+const pools = await c2.getPoolSizes(<MARKET_ID>n);
+console.log('noTotal:', pools[0].toString(), 'yesTotal:', pools[1].toString());
+console.log('noCount:', pools[2].toString(), 'yesCount:', pools[3].toString());
+"
+```
+
+## 7) Firebase Validation
+
+### Anonymous auth check
+
+```bash
 curl -sS -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY_VAR}" \
   -H "Content-Type: application/json" \
   -d '{"returnSecureToken":true}'
 ```
 
-Expected: JSON containing `idToken`.
-If you get `CONFIGURATION_NOT_FOUND`, fix Firebase setup:
-- Use the Web API key from the same Firebase project as `FIREBASE_PROJECT_ID_VAR`.
-- Enable Firebase Authentication for that project.
-- Enable **Anonymous** sign-in provider.
+Expected: JSON containing `idToken`. If `CONFIGURATION_NOT_FOUND`, check:
+- Web API key matches Firebase project
+- Firebase Authentication enabled
+- Anonymous sign-in provider enabled
 
-### 4.2 Firestore rules
+### Firestore rules
 
-Current workflows write to:
-- settlement docs in `/demo/{doc}`
-- private bet docs in `/privateBets/{doc}`
-- private settlement docs in `/privateSettlements/{doc}`
+Workflows write to:
+- `/demo/{doc}` — Standard settlement docs
+- `/privateBets/{doc}` — Private bet records
+- `/privateSettlements/{doc}` — Settlement audit docs
 
-Rules must allow authenticated reads/writes for both paths.
+Rules must allow authenticated reads/writes. Use rules from `../firestore.rules`.
 
-Use the repo rules file:
-
-```bash
-cat ../firestore.rules
-```
-
-Then paste in Firebase Console:
-- Firestore Database -> Rules
-
-## 5) End-to-end smoke test (new market + YES + NO)
-
-### 5.1 Create market payload
+## 8) Full E2E Flow (New Market)
 
 ```bash
+# 1. Create market
 TS=$(date +%s)
 cat > /tmp/create-market-e2e.json <<EOF
 {
-  "question": "E2E Test Market ${TS}: Will BTC close above \$120,000 by Dec 31, 2026?",
+  "question": "Did the United States land astronauts on the Moon in July 1969?",
   "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
   "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
 }
 EOF
-```
 
-### 5.2 Broadcast create-market tx
-
-```bash
 cre workflow simulate ./prediction-market-demo \
   --target local-simulation \
   --trigger-index 0 \
-  --http-payload @/tmp/create-market-e2e.json \
+  --http-payload "@/tmp/create-market-e2e.json" \
   --non-interactive \
   --broadcast
-```
 
-### 5.3 Get latest market id
-
-```bash
+# 2. Get market ID
 node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getMarketCount() view returns (uint256)'],p); const n=await c.getMarketCount(); console.log('newMarketId=',(Number(n)-1));"
-```
 
-### 5.4 Generate YES + NO payloads for that market id
+# 3. Generate YES + NO payloads (replace <MARKET_ID>)
+generate_private_bet_payload <MARKET_ID> YES ./prediction-market-demo/private-bet-payload-yes.json
+generate_private_bet_payload <MARKET_ID> NO ./prediction-market-demo/private-bet-payload-no.json
 
-```bash
-generate_private_bet_payload <NEW_MARKET_ID> YES ./prediction-market-demo/private-bet-payload-yes.json
-generate_private_bet_payload <NEW_MARKET_ID> NO ./prediction-market-demo/private-bet-payload-no.json
-```
-
-### 5.5 Broadcast both sides
-
-```bash
+# 4. Broadcast YES bet
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload-yes.json \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-yes.json" \
   --non-interactive \
   --broadcast
 
+# 5. Broadcast NO bet
 cre workflow simulate ./prediction-market-demo \
   --target private-bet-local-simulation \
   --trigger-index 0 \
-  --http-payload @./private-bet-payload-no.json \
+  --http-payload "@$(pwd)/prediction-market-demo/private-bet-payload-no.json" \
   --non-interactive \
   --broadcast
-```
 
-## 6) Private Settlement Workflow (EVM trigger on `MarketClosed`)
+# 6. Close market (replace <MARKET_ID>)
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=<MARKET_ID>n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
 
-This workflow does:
-- decode `MarketClosed(marketId)`
-- read market question from contract
-- resolve winner with Gemini
-- scan `privateBets` in Firestore for that market
-- pay winners via private transfer API from escrow account
-- write final onchain settlement report
-- write settlement audit to `privateSettlements`
+# 7. Request settlement (replace <MARKET_ID>)
+node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=<MARKET_ID>n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function requestSettlement(uint256)'], wallet); const tx=await market.requestSettlement(marketId); console.log('requestSettlementTx=', tx.hash); await tx.wait();"
 
-### 6.1 Close market onchain (emits `MarketClosed`)
-
-```bash
-set -a && source .env && set +a
-node --input-type=module -e "import { Wallet, JsonRpcProvider, Contract } from 'ethers'; const marketId=1n; const provider=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const wallet=new Wallet(process.env.CRE_ETH_PRIVATE_KEY, provider); const market=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function closeMarket(uint256)'], wallet); const tx=await market.closeMarket(marketId); console.log('closeMarketTx=', tx.hash); await tx.wait();"
-```
-
-### 6.2 Simulate private settlement from close tx hash
-
-```bash
+# 8. Run settlement workflow (replace <REQUEST_SETTLEMENT_TX_HASH>)
 cre workflow simulate ./prediction-market-demo \
-  --target private-settlement-local-simulation \
-  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
-  --evm-event-index 0
-```
-
-### 6.3 Broadcast private settlement
-
-```bash
-cre workflow simulate ./prediction-market-demo \
-  --target private-settlement-local-simulation \
-  --evm-tx-hash <TX_HASH_WITH_MARKET_CLOSED_EVENT> \
+  --target staging \
+  --evm-tx-hash <REQUEST_SETTLEMENT_TX_HASH> \
   --evm-event-index 0 \
+  --trigger-index 0 \
+  --non-interactive \
   --broadcast
+
+# 9. Verify on-chain state
+node --input-type=module -e "import { JsonRpcProvider, Contract } from 'ethers'; const p=new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg'); const c=new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',['function getMarket(uint256) view returns (string,uint256,uint256,uint8,uint8,uint256,string,uint16,uint256[2],uint256[2])'],p); const m=await c.getMarket(<MARKET_ID>n); console.log('status:', ['Open','SettlementRequested','Settled','NeedsManual'][Number(m[3])]); console.log('outcome:', ['None','No','Yes','Inconclusive'][Number(m[4])]); console.log('confidence:', Number(m[7]));"
 ```
