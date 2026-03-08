@@ -411,23 +411,19 @@ The CRE workflow automatically:
 
 ```bash
 # Check on-chain market state
-node --input-type=module -e "
+node --input-type=module <<'NODE'
 import { JsonRpcProvider, Contract } from 'ethers';
-const p = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY');
+const p = new JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/HfydL6i5LTIMjZnHdDEDg');
 const c = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
-  ['function getMarket(uint256) view returns (string,uint256,uint256,uint8,uint8,uint256,string,uint16,uint256[2],uint256[2])'],
-  p);
-const m = await c.getMarket(<MARKET_ID>n);
-console.log('question:', m[0]);
-console.log('status:', ['Open','SettlementRequested','Settled','NeedsManual'][Number(m[3])]);
-console.log('outcome:', ['None','No','Yes','Inconclusive'][Number(m[4])]);
-console.log('confidence:', Number(m[7]));
-
-const c2 = new Contract('0x77a8ae9Fd960a6edF8263eC0966071d86529f23c',
-  ['function getPoolSizes(uint256) view returns (uint256,uint256,uint256,uint256)'], p);
-const pools = await c2.getPoolSizes(<MARKET_ID>n);
-console.log('noTotal:', pools[0].toString(), 'yesTotal:', pools[1].toString());
-console.log('noCount:', pools[2].toString(), 'yesCount:', pools[3].toString());
+  ['function getMarket(uint256) view returns (tuple(string question, address escrowShieldedAddress, address tokenAddress, uint256 marketOpen, uint256 closedAt, bool closed, uint8 status, uint8 outcome, uint256 settledAt, string evidenceURI, uint16 confidenceBps, uint256[2] predTotals, uint256[2] predCounts))'], p);
+const m = await c.getMarket(7n);
+console.log('question:', m.question);
+console.log('status:', ['Open','SettlementRequested','Settled','NeedsManual'][m.status]);
+console.log('outcome:', ['None','No','Yes','Inconclusive'][m.outcome]);
+console.log('confidence:', Number(m.confidenceBps));
+console.log('yesTotal:', m.predTotals[1].toString(), 'noTotal:', m.predTotals[0].toString());
+console.log('yesCount:', m.predCounts[1].toString(), 'noCount:', m.predCounts[0].toString());
+NODE
 "
 ```
 
