@@ -13,7 +13,7 @@ The on-chain contract only ever sees aggregate pool totals. Individual bets, bet
 - **End-to-end private**: Bet placement, token custody, winner payouts — all happen as private off-chain transfers. Zero individual data on-chain.
 - **Fully automated**: No human oracle. CRE listens for on-chain events, calls Gemini AI, settles the market, and pays winners — all in one atomic workflow.
 - **Compliance-ready**: Every private transfer is EIP-712 signed and validated by the ACE PolicyEngine. The escrow is hardcoded as non-withdrawable at the contract level.
-- **Verifiable**: Settlement outcome, confidence score, and Gemini response ID are stored on-chain as immutable evidence.
+- **Verifiable**: Settlement outcome, confidence score, and Gemini response ID are stored on-chain as immutable evidence. [View live contract on Etherscan](https://sepolia.etherscan.io/address/0x77a8ae9Fd960a6edF8263eC0966071d86529f23c#events)
 
 ## The Problem
 
