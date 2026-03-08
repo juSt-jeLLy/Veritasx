@@ -10,75 +10,104 @@ Users create binary prediction markets, place private bets using compliant off-c
 
 Traditional prediction markets expose every bet on-chain: who bet, how much, and on which side. This creates front-running risks, privacy concerns, and discourages participation. VeritasX solves this by:
 
-- **Private betting**: Individual bets are transferred via Chainlink ACE's compliant private token system — no individual bet details appear on-chain
-- **Offchain bet storage**: Bet records live in Firestore, accessible only to the CRE workflow during settlement
+- **Private betting with Chainlink Confidential Compute**: All bets flow through Chainlink ACE's compliant private token system using private transactions — individual bet details never appear on-chain. The CRE workflow uses Confidential HTTP to execute private transfers, keeping bettor identities, amounts, and positions completely off-chain.
+- **Secure escrow with ACE Vault**: All bets are deposited into an escrow address inside the ACE Vault. The escrow address is **prohibited from withdrawing tokens** from the vault — this is enforced at the token contract level, meaning the escrow cannot be compromised or drained. Only CRE settlement workflows can move funds from escrow via private transfers to winners.
+- **Private token transfers**: Tokens live inside the ACE Vault as private balances. Betting (bettor → escrow) and payouts (escrow → winner) both happen as off-chain private transfers — no token movement is visible on-chain. The vault's PolicyEngine enforces compliance on every transfer.
 - **AI-powered resolution**: Gemini AI with Google Search grounding determines market outcomes — no manual oracle needed
-- **Private payouts**: Winners receive payouts through private token transfers from an escrow account — payout amounts and recipients stay off-chain
 - **On-chain aggregates only**: The smart contract only sees pool totals (total YES/NO amounts and counts), never individual positions
+- **Offchain bet storage**: Bet records live in Firestore, accessible only to the CRE workflow during settlement
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           VeritasX Architecture                        │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  User                                                                   │
-│   │                                                                     │
-│   ├── 1. Create Market ──────> CRE HTTP Workflow ──> SimpleMarket.sol  │
-│   │                             (createmarketworkflow.ts)               │
-│   │                                                                     │
-│   ├── 2. Place Private Bet ──> CRE HTTP Workflow ──> ACE Private API   │
-│   │                             (privatebetworkflow.ts)   │             │
-│   │                                                       ▼             │
-│   │                             Firestore (privateBets) + On-chain      │
-│   │                                                       aggregates    │
-│   │                                                                     │
-│   ├── 3. Close Market ───────> cast/ethers ──> SimpleMarket.closeMarket │
-│   │                                                                     │
-│   ├── 4. Request Settlement ─> cast/ethers ──> SimpleMarket             │
-│   │                                            .requestSettlement       │
-│   │                                             │                       │
-│   │                              ┌──────────────┘                       │
-│   │                              ▼ SettlementRequested event            │
-│   │                                                                     │
-│   └── 5. CRE Settlement Workflow (privateSettlementWorkflow.ts)        │
-│          │                                                              │
-│          ├── a) Gemini AI ──> Resolve YES/NO/INCONCLUSIVE              │
-│          ├── b) Firestore ──> Load all private bets for market         │
-│          ├── c) On-chain  ──> settleMarket with aggregates             │
-│          ├── d) ACE API   ──> Private payouts to winners               │
-│          └── e) Firestore ──> Write settlement audit                   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           VeritasX Architecture                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  On-Chain (Sepolia)                      Off-Chain (Private)                 │
+│  ┌──────────────────────┐                ┌──────────────────────────┐        │
+│  │  SimpleMarket.sol    │                │  ACE Vault               │        │
+│  │  - market creation   │                │  (Private Token System)  │        │
+│  │  - aggregate pools   │                │                          │        │
+│  │  - settlement status │                │  Bettor Balance ──────>  │        │
+│  │  - outcome/confidence│                │      Private Transfer    │        │
+│  └──────────────────────┘                │          │               │        │
+│                                          │          ▼               │        │
+│  ┌──────────────────────┐                │  Escrow Balance          │        │
+│  │  ERC-20 Token        │  deposit       │  (withdrawal blocked     │        │
+│  │  (SimpleToken)       │ ──────────>    │   at contract level)     │        │
+│  └──────────────────────┘                │          │               │        │
+│                                          │          ▼ (settlement)  │        │
+│                                          │  Winner Balance <─────   │        │
+│                                          │      Private Payout      │        │
+│                                          └──────────────────────────┘        │
+│                                                                              │
+│  Flow:                                                                       │
+│                                                                              │
+│  1. Create Market ────> CRE HTTP Workflow ──> SimpleMarket.newMarket()       │
+│                                                                              │
+│  2. Place Private Bet ──> CRE Confidential Compute Workflow                  │
+│     │                     │                                                  │
+│     │                     ├── ACE API: private transfer (bettor → escrow)    │
+│     │                     ├── Firestore: write bet record (off-chain only)   │
+│     │                     └── SimpleMarket: update aggregate pools only      │
+│     │                                                                        │
+│     │   Escrow holds all bets as private vault balance.                      │
+│     │   Escrow CANNOT withdraw from vault (enforced in token contract).      │
+│     │   No individual bet data touches the blockchain.                       │
+│                                                                              │
+│  3. Close Market ────> SimpleMarket.closeMarket()                            │
+│                                                                              │
+│  4. Request Settlement ──> SimpleMarket.requestSettlement()                  │
+│                            │                                                 │
+│                            ▼ emit SettlementRequested(marketId, question)    │
+│                                                                              │
+│  5. CRE Settlement Workflow (Chainlink Confidential Compute)                 │
+│     │                                                                        │
+│     ├── a) Gemini AI ──> Resolve YES/NO/INCONCLUSIVE + confidence            │
+│     ├── b) Firestore ──> Load all private bets for market                    │
+│     ├── c) On-chain  ──> settleMarket with aggregates (no individual data)   │
+│     ├── d) ACE API   ──> Private payouts: escrow → each winner              │
+│     │                     (EIP-712 signed, compliance-checked)               │
+│     └── e) Firestore ──> Write settlement audit                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant CRE as CRE Workflow
-    participant Contract as SimpleMarket (Sepolia)
-    participant ACE as ACE Private API
+    participant CRE as CRE Workflow<br/>(Confidential Compute)
+    participant Contract as SimpleMarket<br/>(Sepolia)
+    participant Vault as ACE Vault<br/>(Private Tokens)
     participant Firestore as Firestore DB
     participant Gemini as Gemini AI
 
+    Note over User,Vault: Phase 1: Market Creation
     User->>CRE: Create Market (HTTP trigger)
     CRE->>Contract: newMarket(question, token)
 
+    Note over User,Vault: Phase 2: Private Betting (Confidential Compute)
     User->>CRE: Place Private Bet (HTTP + EIP-712 sig)
-    CRE->>ACE: POST /private-transfer (bettor → escrow)
-    CRE->>Firestore: Write bet record (privateBets)
-    CRE->>Contract: Update aggregate pools only
+    CRE->>Vault: Private transfer: bettor → escrow
+    Note right of Vault: Tokens move privately inside vault.<br/>Escrow cannot withdraw (blocked in contract).
+    CRE->>Firestore: Write bet record (off-chain only)
+    CRE->>Contract: Update aggregate pools only (no individual data)
 
+    Note over User,Vault: Phase 3: Close & Request Settlement
     User->>Contract: closeMarket(marketId)
     User->>Contract: requestSettlement(marketId)
     Contract-->>CRE: emit SettlementRequested(marketId, question)
 
+    Note over CRE,Gemini: Phase 4: AI-Powered Settlement (Confidential Compute)
     CRE->>Gemini: "Is this true?" + Google Search grounding
     Gemini-->>CRE: {result: "YES", confidence: 9500}
-    CRE->>Firestore: Load all bets for marketId
+    CRE->>Firestore: Load all private bets for marketId
     CRE->>Contract: settleMarket(outcome, confidence, aggregates)
-    CRE->>ACE: Private payout: escrow → winner (per bet)
+
+    Note over CRE,Vault: Phase 5: Private Payouts
+    CRE->>Vault: Private payout: escrow → winner (per bet)
+    Note right of Vault: Winner receives private token balance.<br/>No payout details visible on-chain.
     CRE->>Firestore: Write settlement audit
 ```
 
@@ -95,20 +124,23 @@ VeritasX is a decentralized prediction and forecasting application that relies o
 
 ### Privacy Track
 
-VeritasX uses **Chainlink Confidential Compute** and **CRE's Confidential HTTP capability** to build a fully privacy-preserving prediction market:
+VeritasX uses **Chainlink Confidential Compute** and **CRE's Confidential HTTP capability** to build a fully privacy-preserving prediction market where bets, payouts, and token flows are all private:
 
-- **Private betting via ACE**: Individual bets flow through Chainlink ACE's compliant private token transfer system — bet amounts and bettor addresses never appear on-chain
-- **Confidential HTTP for API credentials**: Gemini API keys, Firebase credentials, and escrow private keys are managed through CRE's secrets system — never exposed on-chain or in logs
-- **Private settlement payouts**: Winners receive payouts via private token transfers from the escrow — no payout amounts or recipient addresses visible on-chain
-- **Offchain bet logic**: All bet matching, winner calculation, and payout distribution runs offchain in the CRE workflow — only aggregate totals are written to the contract
-- **EIP-712 signed requests**: All private transfer operations are authenticated with EIP-712 typed data signatures for compliance
-- **Shielded addresses**: The ACE API supports shielded addresses so recipients cannot be linked to real wallet addresses
+- **Private betting via Chainlink Confidential Compute**: The CRE private bet workflow uses Confidential HTTP to execute private token transfers through the ACE API. Bet amounts, bettor addresses, and positions (YES/NO) never appear on-chain. The entire bet execution — transfer, storage, and aggregate update — runs inside Chainlink's confidential execution environment.
+- **Private tokens in ACE Vault**: All tokens used for betting live as private balances inside the ACE Vault on Sepolia. When a user places a bet, their private token balance is transferred to the escrow address — this transfer happens entirely off-chain via the ACE API, with no on-chain footprint.
+- **Tamper-proof escrow**: The escrow address that holds all bet deposits is **prohibited from withdrawing tokens from the vault** — this restriction is enforced at the token contract level. Even if the escrow private key were leaked, no funds could be extracted from the vault. Only the CRE settlement workflow can move funds from escrow to winners via private transfers.
+- **Private settlement payouts**: After Gemini AI resolves the market, the CRE workflow calculates winner payouts and executes private transfers (escrow → each winner) via the ACE API. Payout amounts and recipient addresses are never exposed on-chain.
+- **Confidential HTTP for API credentials**: Gemini API keys, Firebase credentials, and the escrow private key are managed through CRE's secrets system — never exposed on-chain, in logs, or to any party.
+- **EIP-712 compliance signatures**: All private transfer operations (bets and payouts) are authenticated with EIP-712 typed data signatures. The ACE PolicyEngine enforces compliance on every transfer via off-chain `eth_call` — no transaction metadata is exposed on-chain.
+- **Shielded addresses**: The ACE API supports shielded addresses so recipients cannot be linked to real wallet addresses.
 
 **What stays private:**
 - Individual bet amounts and bettor addresses
 - Which side (YES/NO) each user bet on
+- All token transfers (bettor → escrow, escrow → winner)
 - Winner payout amounts and recipient addresses
 - API credentials and escrow keys
+- Internal transaction flows between vault balances
 
 **What goes on-chain (aggregates only):**
 - Total YES pool and NO pool sizes
