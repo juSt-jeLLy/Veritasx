@@ -495,7 +495,7 @@ Every file below directly uses a Chainlink product. Click to view the source.
 | [SimpleMarket.sol](contracts/src/SimpleMarket.sol) | Prediction market contract — receives CRE settlement reports via `onReport()` |
 | [ReceiverTemplate.sol](contracts/src/interfaces/ReceiverTemplate.sol) | Abstract CRE report receiver with forwarder validation |
 | [IReceiver.sol](contracts/src/interfaces/IReceiver.sol) | `onReport()` interface for Chainlink CRE reports |
-| [1_DeploySimpleMarket.s.sol](contracts/script/1_DeploySimpleMarket.s.sol) | Deploy SimpleMarket with CRE Forwarder address |
+| [08_DeploySimpleMarket.s.sol](contracts/script/08_DeploySimpleMarket.s.sol) | Deploy SimpleMarket with CRE Forwarder address |
 
 ## Key Smart Contract: SimpleMarket.sol
 
