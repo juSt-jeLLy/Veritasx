@@ -1,21 +1,34 @@
-# VeritasX — AI-Powered Private Prediction Markets
+# VeritasX — Private Prediction Markets with AI Settlement
 
-> **Hackathon Tracks: Prediction Markets + Privacy**
+> **Tracks: Prediction Markets | Privacy**
+>
+> Built with: **Chainlink CRE** | **Chainlink Confidential Compute (ACE)** | **Gemini AI** | **Solidity** | **Firebase** | **Sepolia Testnet**
 
-VeritasX is a fully decentralized prediction market platform with **AI-powered settlement** and **privacy-preserving betting** built on **Chainlink CRE (Chainlink Runtime Environment)** and **Chainlink Confidential Compute**.
+**VeritasX** is a prediction market where **nobody sees your bet**. Markets are created on-chain, bets flow through **Chainlink Confidential Compute** as private token transfers inside an **ACE Vault**, and outcomes are resolved automatically by **Gemini AI** — all orchestrated by **Chainlink CRE**.
 
-Users create binary prediction markets, place private bets using compliant off-chain token transfers, and have markets automatically settled by Gemini AI — all without exposing individual bet amounts, bettor identities, or payout flows on-chain.
+The on-chain contract only ever sees aggregate pool totals. Individual bets, bettor identities, payout amounts, and token flows all stay private.
 
-## Why This Matters
+### Key Highlights
 
-Traditional prediction markets expose every bet on-chain: who bet, how much, and on which side. This creates front-running risks, privacy concerns, and discourages participation. VeritasX solves this by:
+- **End-to-end private**: Bet placement, token custody, winner payouts — all happen as private off-chain transfers. Zero individual data on-chain.
+- **Fully automated**: No human oracle. CRE listens for on-chain events, calls Gemini AI, settles the market, and pays winners — all in one atomic workflow.
+- **Compliance-ready**: Every private transfer is EIP-712 signed and validated by the ACE PolicyEngine. The escrow is hardcoded as non-withdrawable at the contract level.
+- **Verifiable**: Settlement outcome, confidence score, and Gemini response ID are stored on-chain as immutable evidence.
 
-- **Private betting with Chainlink Confidential Compute**: All bets flow through Chainlink ACE's compliant private token system using private transactions — individual bet details never appear on-chain. The CRE workflow uses Confidential HTTP to execute private transfers, keeping bettor identities, amounts, and positions completely off-chain.
-- **Secure escrow with ACE Vault**: All bets are deposited into an escrow address inside the ACE Vault. The escrow address is **prohibited from withdrawing tokens** from the vault — this is enforced at the token contract level, meaning the escrow cannot be compromised or drained. Only CRE settlement workflows can move funds from escrow via private transfers to winners.
-- **Private token transfers**: Tokens live inside the ACE Vault as private balances. Betting (bettor → escrow) and payouts (escrow → winner) both happen as off-chain private transfers — no token movement is visible on-chain. The vault's PolicyEngine enforces compliance on every transfer.
-- **AI-powered resolution**: Gemini AI with Google Search grounding determines market outcomes — no manual oracle needed
-- **On-chain aggregates only**: The smart contract only sees pool totals (total YES/NO amounts and counts), never individual positions
-- **Offchain bet storage**: Bet records live in Firestore, accessible only to the CRE workflow during settlement
+## The Problem
+
+On-chain prediction markets expose everything: who bet, how much, on which side. This enables front-running, discourages honest participation, and leaks sensitive positioning data.
+
+## How VeritasX Solves It
+
+| What | How |
+|---|---|
+| **Private bets** | Bets are private token transfers (bettor → escrow) inside the ACE Vault via Chainlink Confidential Compute. No bet data on-chain. |
+| **Tamper-proof escrow** | The escrow address is **blocked from withdrawing** from the vault at the token contract level — it can only send via private transfers. Even a leaked key can't drain funds. |
+| **AI settlement** | Gemini AI with Google Search grounding resolves markets as YES/NO/INCONCLUSIVE with a confidence score. No manual oracle. |
+| **Private payouts** | Winners receive tokens via private transfers (escrow → winner) through the ACE API. Payout amounts and recipients never appear on-chain. |
+| **On-chain aggregates only** | The smart contract stores only total YES/NO pool sizes and counts — never individual positions. |
+| **Offchain bet records** | Individual bet data lives in Firestore, read only by the CRE settlement workflow. |
 
 ## Architecture
 
