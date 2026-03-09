@@ -37,10 +37,11 @@ cre workflow simulate ./prediction-market-demo \
 ```json
 {
   "question": "Will BTC close above $120,000 by Dec 31, 2026?",
-  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
   "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
 }
 ```
+
+> The escrow address is hardcoded in the workflow and cannot be changed.
 
 ### Get latest market ID
 
@@ -330,7 +331,6 @@ TS=$(date +%s)
 cat > /tmp/create-market-e2e.json <<EOF
 {
   "question": "Did the United States land astronauts on the Moon in July 1969?",
-  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
   "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
 }
 EOF

@@ -12,11 +12,13 @@ import {
 } from "@chainlink/cre-sdk";
 import { encodeAbiParameters, isAddress, parseAbiParameters } from "viem";
 
+// Hardcoded escrow address — this address is blocked from withdrawing
+// from the ACE Vault at the token contract level, so it cannot be compromised.
+const ESCROW_ADDRESS = "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F";
+
 // Inline types
 interface CreateMarketPayload {
   question: string;
-  stakingAddress?: string;
-  stackingAddress?: string; // backwards-compatible typo alias
   tokenAddress?: string;
 }
 
@@ -56,11 +58,7 @@ export function onHttpTrigger(runtime: Runtime<Config>, payload: HTTPPayload): s
       runtime.log("[ERROR] Question is required");
       return "Error: Question is required";
     }
-    const stakingAddress = inputData.stakingAddress ?? inputData.stackingAddress;
-    if (!stakingAddress || !isAddress(stakingAddress)) {
-      runtime.log("[ERROR] stakingAddress must be a valid 0x-prefixed EVM address");
-      return "Error: stakingAddress is required and must be a valid address";
-    }
+    const stakingAddress = ESCROW_ADDRESS;
 
     // ─────────────────────────────────────────────────────────────
     // Step 2: Get network and create EVM client

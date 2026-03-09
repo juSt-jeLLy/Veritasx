@@ -304,10 +304,11 @@ Payload format:
 ```json
 {
   "question": "Will BTC close above $120,000 by Dec 31, 2026?",
-  "stakingAddress": "0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F",
   "tokenAddress": "0xF5655184B6bfa977FbCcD9C77d308F2d261eddBc"
 }
 ```
+
+> **Note:** The escrow address (`0xdB772823f62c009E6EC805BC57A4aFc7B2701F1F`) is hardcoded in the workflow — it cannot be changed because it is blocked from withdrawing at the token contract level.
 
 ### Step 2: Get the New Market ID
 
