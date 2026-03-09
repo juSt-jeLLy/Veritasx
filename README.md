@@ -208,6 +208,24 @@ Every file below directly uses a Chainlink product. Click to view the source.
 | [08_DeploySimpleMarket.s.sol](contracts/script/08_DeploySimpleMarket.s.sol) | Deploy SimpleMarket with CRE Forwarder address |
 
 
+## Documentation Map
+
+### Workflow Guides
+- [Workflow Commands](cre-workflow/prediction-market-demo/workflow-commands.md) — Complete command reference for every step (create, bet, close, settle, verify)
+- [Workflow Runbook](cre-workflow/prediction-market-demo/workflow-runbook.md) — Quick condensed operational guide
+- [Private Bet Workflow](cre-workflow/prediction-market-demo/private-bet-workflow.md) — Private bet flow: ACE transfer + Firestore + on-chain aggregate
+- [Private Settlement Workflow](cre-workflow/prediction-market-demo/private-settlement-workflow.md) — Settlement flow: Gemini AI + on-chain settle + private payouts
+
+
+### Core Docs
+- [CRE Workflow README](cre-workflow/README.md) — CRE workflow architecture, module deep-dive, all three workflows explained
+- [Contracts README](contracts/README.md) — SimpleMarket smart contract, tests, Foundry deployment scripts
+- [Private Contract README](private%20contract/README.md) — ACE compliant private token demo (vault, deposit, transfer, withdraw)
+- [Private Contract API Instructions](private%20contract/API%20Instructions.md) — ACE API reference and demo UI links
+- [Firebase Setup Guide](firebase-setup.md) — Firebase project creation, Firestore, anonymous auth, security rules
+
+
+
 ## Repository Structure
 
 ```
@@ -252,7 +270,7 @@ Set these values in `.env`:
 | `GEMINI_API_KEY_VAR` | Google Gemini API key |
 | `FIREBASE_API_KEY_VAR` | Firebase Web API key |
 | `FIREBASE_PROJECT_ID_VAR` | Firebase project ID |
-| `ESCROW_PRIVATE_KEY_VAR` | Escrow wallet private key for payouts (0x-prefixed, 32 bytes) |
+| `ESCROW_PRIVATE_KEY_VAR = 0x4914281e757b88f3eb867e7a12cf0411681ac606c20571661ae501b769162a67` | Escrow wallet private key for payouts (0x-prefixed, 32 bytes) |
 
 ### 2. Install Dependencies
 
