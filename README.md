@@ -161,6 +161,53 @@ VeritasX uses **Chainlink Confidential Compute** and **CRE's Confidential HTTP c
 - Settlement outcome and confidence score
 - Gemini response ID (evidence URI)
 
+
+## Chainlink Integration — Source Files
+
+Every file below directly uses a Chainlink product. Click to view the source.
+
+### Chainlink CRE (Runtime Environment) — Workflow Orchestration
+
+| File | What It Does |
+|---|---|
+| [privateSettlementWorkflow.ts](cre-workflow/prediction-market-demo/privateSettlementWorkflow.ts) | Core settlement workflow — EVM log trigger, Gemini AI, Firestore, ACE payouts, consensus |
+| [privateSettlementGemini.ts](cre-workflow/prediction-market-demo/privateSettlementGemini.ts) | Gemini AI resolution with CRE secrets + consensus aggregation |
+| [privateSettlementEvm.ts](cre-workflow/prediction-market-demo/privateSettlementEvm.ts) | On-chain settlement report via CRE EVM Write |
+| [privateSettlementFirestore.ts](cre-workflow/prediction-market-demo/privateSettlementFirestore.ts) | Firestore bet loading + audit write via CRE HTTP capability |
+| [privateSettlementPayout.ts](cre-workflow/prediction-market-demo/privateSettlementPayout.ts) | Private payouts via CRE Confidential HTTP + ACE API |
+| [privatebetworkflow.ts](cre-workflow/prediction-market-demo/privatebetworkflow.ts) | Private bet workflow — HTTP trigger, ACE transfer, Firestore, aggregate update |
+| [privateBetEvm.ts](cre-workflow/prediction-market-demo/privateBetEvm.ts) | On-chain aggregate pool update via CRE EVM Write |
+| [privateBetFirestore.ts](cre-workflow/prediction-market-demo/privateBetFirestore.ts) | Bet record write to Firestore via CRE HTTP |
+| [privateBetHttpCallback.ts](cre-workflow/prediction-market-demo/privateBetHttpCallback.ts) | HTTP payload decoding for bet trigger |
+| [createmarketworkflow.ts](cre-workflow/prediction-market-demo/createmarketworkflow.ts) | Market creation workflow — HTTP trigger + EVM Write |
+| [httpCallback.ts](cre-workflow/prediction-market-demo/httpCallback.ts) | ABI encoding helpers for CRE reports |
+| [main.ts](cre-workflow/prediction-market-demo/main.ts) | Standard (non-private) settlement workflow |
+| [evm.ts](cre-workflow/prediction-market-demo/evm.ts) | EVM interactions for standard settlement |
+| [gemini.ts](cre-workflow/prediction-market-demo/gemini.ts) | Gemini integration for standard settlement |
+| [firebase.ts](cre-workflow/prediction-market-demo/firebase.ts) | Firebase interactions for standard settlement |
+| [project.yaml](cre-workflow/project.yaml) | CRE project config — DON family, chain selectors, targets |
+| [secrets.yaml](cre-workflow/secrets.yaml) | CRE secrets mapping (Gemini key, Firebase creds, escrow key) |
+
+### Chainlink Confidential Compute (ACE) — Private Token Transfers
+
+| File | What It Does |
+|---|---|
+| [privateTransferApi.ts](cre-workflow/prediction-market-demo/privateTransferApi.ts) | ACE API client — EIP-712 signed private transfers via Confidential HTTP |
+| [SimpleToken.sol](private%20contract/src/SimpleToken.sol) | ERC-20 token with blocked escrow address — enforced at contract level |
+| [SetupAll.s.sol](private%20contract/script/SetupAll.s.sol) | Deploy token + PolicyEngine proxy + register on ACE Vault + deposit |
+| [01_DeployToken.s.sol](private%20contract/script/01_DeployToken.s.sol) | Deploy PREDICT/PRED token with price-per-token |
+| [config.json](cre-workflow/prediction-market-demo/config.json) | ACE API base URL + contract addresses |
+
+### Chainlink CRE Forwarder — On-Chain Report Receiver
+
+| File | What It Does |
+|---|---|
+| [SimpleMarket.sol](contracts/src/SimpleMarket.sol) | Prediction market contract — receives CRE settlement reports via `onReport()` |
+| [ReceiverTemplate.sol](contracts/src/interfaces/ReceiverTemplate.sol) | Abstract CRE report receiver with forwarder validation |
+| [IReceiver.sol](contracts/src/interfaces/IReceiver.sol) | `onReport()` interface for Chainlink CRE reports |
+| [08_DeploySimpleMarket.s.sol](contracts/script/08_DeploySimpleMarket.s.sol) | Deploy SimpleMarket with CRE Forwarder address |
+
+
 ## Repository Structure
 
 ```
@@ -448,50 +495,6 @@ NODE
 | **Consensus Aggregation** | Ensure all CRE nodes agree on Gemini response before settlement |
 | **Confidential HTTP** | API credentials and request/response data protected from on-chain exposure |
 
-## Chainlink Integration — Source Files
-
-Every file below directly uses a Chainlink product. Click to view the source.
-
-### Chainlink CRE (Runtime Environment) — Workflow Orchestration
-
-| File | What It Does |
-|---|---|
-| [privateSettlementWorkflow.ts](cre-workflow/prediction-market-demo/privateSettlementWorkflow.ts) | Core settlement workflow — EVM log trigger, Gemini AI, Firestore, ACE payouts, consensus |
-| [privateSettlementGemini.ts](cre-workflow/prediction-market-demo/privateSettlementGemini.ts) | Gemini AI resolution with CRE secrets + consensus aggregation |
-| [privateSettlementEvm.ts](cre-workflow/prediction-market-demo/privateSettlementEvm.ts) | On-chain settlement report via CRE EVM Write |
-| [privateSettlementFirestore.ts](cre-workflow/prediction-market-demo/privateSettlementFirestore.ts) | Firestore bet loading + audit write via CRE HTTP capability |
-| [privateSettlementPayout.ts](cre-workflow/prediction-market-demo/privateSettlementPayout.ts) | Private payouts via CRE Confidential HTTP + ACE API |
-| [privatebetworkflow.ts](cre-workflow/prediction-market-demo/privatebetworkflow.ts) | Private bet workflow — HTTP trigger, ACE transfer, Firestore, aggregate update |
-| [privateBetEvm.ts](cre-workflow/prediction-market-demo/privateBetEvm.ts) | On-chain aggregate pool update via CRE EVM Write |
-| [privateBetFirestore.ts](cre-workflow/prediction-market-demo/privateBetFirestore.ts) | Bet record write to Firestore via CRE HTTP |
-| [privateBetHttpCallback.ts](cre-workflow/prediction-market-demo/privateBetHttpCallback.ts) | HTTP payload decoding for bet trigger |
-| [createmarketworkflow.ts](cre-workflow/prediction-market-demo/createmarketworkflow.ts) | Market creation workflow — HTTP trigger + EVM Write |
-| [httpCallback.ts](cre-workflow/prediction-market-demo/httpCallback.ts) | ABI encoding helpers for CRE reports |
-| [main.ts](cre-workflow/prediction-market-demo/main.ts) | Standard (non-private) settlement workflow |
-| [evm.ts](cre-workflow/prediction-market-demo/evm.ts) | EVM interactions for standard settlement |
-| [gemini.ts](cre-workflow/prediction-market-demo/gemini.ts) | Gemini integration for standard settlement |
-| [firebase.ts](cre-workflow/prediction-market-demo/firebase.ts) | Firebase interactions for standard settlement |
-| [project.yaml](cre-workflow/project.yaml) | CRE project config — DON family, chain selectors, targets |
-| [secrets.yaml](cre-workflow/secrets.yaml) | CRE secrets mapping (Gemini key, Firebase creds, escrow key) |
-
-### Chainlink Confidential Compute (ACE) — Private Token Transfers
-
-| File | What It Does |
-|---|---|
-| [privateTransferApi.ts](cre-workflow/prediction-market-demo/privateTransferApi.ts) | ACE API client — EIP-712 signed private transfers via Confidential HTTP |
-| [SimpleToken.sol](private%20contract/src/SimpleToken.sol) | ERC-20 token with blocked escrow address — enforced at contract level |
-| [SetupAll.s.sol](private%20contract/script/SetupAll.s.sol) | Deploy token + PolicyEngine proxy + register on ACE Vault + deposit |
-| [01_DeployToken.s.sol](private%20contract/script/01_DeployToken.s.sol) | Deploy PREDICT/PRED token with price-per-token |
-| [config.json](cre-workflow/prediction-market-demo/config.json) | ACE API base URL + contract addresses |
-
-### Chainlink CRE Forwarder — On-Chain Report Receiver
-
-| File | What It Does |
-|---|---|
-| [SimpleMarket.sol](contracts/src/SimpleMarket.sol) | Prediction market contract — receives CRE settlement reports via `onReport()` |
-| [ReceiverTemplate.sol](contracts/src/interfaces/ReceiverTemplate.sol) | Abstract CRE report receiver with forwarder validation |
-| [IReceiver.sol](contracts/src/interfaces/IReceiver.sol) | `onReport()` interface for Chainlink CRE reports |
-| [08_DeploySimpleMarket.s.sol](contracts/script/08_DeploySimpleMarket.s.sol) | Deploy SimpleMarket with CRE Forwarder address |
 
 ## Key Smart Contract: SimpleMarket.sol
 
