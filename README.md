@@ -8,7 +8,7 @@
 
 The on-chain contract only ever sees aggregate pool totals. Individual bets, bettor identities, payout amounts, and token flows all stay private.
 
-### Key Highlights
+### Key Highlight
 
 - **End-to-end private**: Bet placement, token custody, winner payouts — all happen as private off-chain transfers. Zero individual data on-chain.
 - **Fully automated**: No human oracle. CRE listens for on-chain events, calls Gemini AI, settles the market, and pays winners — all in one atomic workflow.
